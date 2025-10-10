@@ -12,19 +12,16 @@ from vq_vae_geodesic.evaluation import extract_and_save_latents
 from vq_vae_geodesic.utils import set_seed
 
 
-
 def launch_extraction():
     """Extract latents from trained MNIST VAE."""
     config = get_mnist_config()
     set_seed(config.seed)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        
 
     # Load trained model
     checkpoint_path = checkpoint_dir() / "main_checkpoint_mnist.pth"
     if not checkpoint_path.exists():
         raise FileNotFoundError(f"Checkpoint not found at {checkpoint_path}")
-
 
     model = build_vae_from_config(config.arch_params)
     checkpoint = torch.load(checkpoint_path, map_location=device)
@@ -48,7 +45,7 @@ def launch_extraction():
 
     print(f"\nLatents saved to {save_dir}")
     print("\nNext step: Run geodesic quantization")
-    print("  python -m vq_vae_geodesic.scripts.quantize_mnist")
+    print("python -m vq_vae_geodesic.scripts.quantize_mnist")
 
 
 if __name__ == "__main__":

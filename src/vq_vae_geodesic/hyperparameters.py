@@ -32,7 +32,6 @@ class GeodesicQuantizationParams:
     """Parameters for geodesic quantization."""
     n_chunks: int = 8  # Number of chunks to split latent
     n_codewords: int = 256  # Size of the codebook
-    use_var_in_features: bool = False  # Whether to use variance in clustering
     knn_k: int = 20  # Number of neighbors for k-NN graph
     mds_dim: int = 64  # Dimensionality for MDS embedding
     subsample_max_pts: int = 5000  # Max points for subsampling

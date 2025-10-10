@@ -3,10 +3,10 @@ import lightning as L
 import wandb
 from lightning.pytorch.loggers import WandbLogger
 
-from vq_vae_geodesic.models.decoder import Decoder_CIFAR
-from vq_vae_geodesic.models.encoder import Encoder_CIFAR
-from vq_vae_geodesic.losses import vae_loss
-from vq_vae_geodesic.loaders.loaders import get_cifar_loaders
+from vq_vae_geodesic.models.modules.decoder import Decoder_CIFAR
+from vq_vae_geodesic.models.modules.encoder import Encoder_CIFAR
+from vq_vae_geodesic.training.losses import vae_loss_bce
+from vq_vae_geodesic.data.loaders import get_cifar_loaders
 
 
 class LitVAE(L.LightningModule):
@@ -88,7 +88,7 @@ if __name__ == "__main__":
     encoder = Encoder_CIFAR(in_channels=3, hidden_channels=64, latent_dim=2)
     decoder = Decoder_CIFAR(out_channels=3, hidden_channels=64, latent_dim=2)
     train_loader, val_loader, test_loader = get_cifar_loaders(batch_size=64, num_workers=2)
-    litVae = LitVAE(encoder, decoder, loss_fn=vae_loss)
+    litVae = LitVAE(encoder, decoder, loss_fn=vae_loss_bce)
     wandb_logger = WandbLogger(project='wandb-lightning', name=run_name)
 
     trainer = L.Trainer(max_epochs=1, accelerator="gpu", logger=wandb_logger)

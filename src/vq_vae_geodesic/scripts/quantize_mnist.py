@@ -15,7 +15,7 @@ def launch_quantization():
     set_seed(config.seed)
     quant_params = config.quant_params
 
-    # Load train latents
+    # Load train latents (mu and optionally logvar)
     train_latents_path = latents_dir() / "train_latents.npz"
     if not train_latents_path.exists():
         raise FileNotFoundError(
@@ -25,14 +25,10 @@ def launch_quantization():
 
     train_data = np.load(train_latents_path)
     train_latents = train_data['mu']  # Use 'mu' key (mean of latent distribution)
-    if quant_params.use_var_in_features:
-        train_variances = train_data['logvar']  # Also load logvar if needed
-        print(f"Loaded train latents: mu={train_latents.shape}, logvar={train_variances.shape}")
-    else:
-        train_variances = None
-        print(f"Loaded train latents: {train_latents.shape}")
+    train_variances = train_data['logvar']  # Also load logvar if needed
+    print(f"Loaded train latents: mu={train_latents.shape}, logvar={train_variances.shape}")
 
-    # Load val latents
+    # Load val latents (mu and optionally logvar)
     val_latents_path = latents_dir() / "val_latents.npz"
     if not val_latents_path.exists():
         raise FileNotFoundError(
@@ -42,34 +38,29 @@ def launch_quantization():
 
     val_data = np.load(val_latents_path)
     val_latents = val_data['mu']
-    if quant_params.use_var_in_features:
-        val_variances = val_data['logvar']
-        print(f"Loaded val latents: mu={val_latents.shape}, logvar={val_variances.shape}")
-    else:
-        val_variances = None
-        print(f"Loaded val latents: {val_latents.shape}")
+    val_variances = val_data['logvar']
+    print(f"Loaded val latents: mu={val_latents.shape}, logvar={val_variances.shape}")
 
     # Create quantizer
     print("\nBuilding geodesic quantizer...")
     quantizer = GeodesicQuantizer(
         n_codewords=quant_params.n_codewords,
         n_chunks=quant_params.n_chunks,
-        use_var=quant_params.use_var_in_features
     )
 
     # Fit codebook on train latents
     print("Fitting codebook with geodesic distances...")
-    quantizer.fit(train_latents)
+    quantizer.fit(train_latents, train_variances)
     print(f"Codebook shape: {quantizer.codebook_chunks.shape}")
 
     # Assign train latents to codebook (get assigned codes)
     print("Assigning train latents to codebook...")
-    train_codes = quantizer.assign(train_latents)  # (N_train, n_chunks)
+    train_codes = quantizer.assign(train_latents, train_variances)  # (N_train, n_chunks)
     print(f"Train codes shape: {train_codes.shape}")
 
     # Assign val latents to codebook
     print("Assigning val latents to codebook...")
-    val_codes = quantizer.assign(val_latents)  # (N_val, n_chunks)
+    val_codes = quantizer.assign(val_latents, val_variances)  # (N_val, n_chunks)
     print(f"Val codes shape: {val_codes.shape}")
 
     # Save codebook and codes

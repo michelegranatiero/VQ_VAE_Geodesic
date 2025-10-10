@@ -190,7 +190,6 @@ def train_mnist(resume=False, extract_latents=False):
             n_chunks=L,
             chunk_size=chunk_size,
             n_codewords=config.quant_params.n_codewords,
-            use_var=config.quant_params.use_var_in_features,
             k=config.quant_params.knn_k
         )
         quantizer.fit(Z_mu, Z_logvar)

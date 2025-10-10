@@ -1120,6 +1120,25 @@ wheels = [
 ]
 
 [[package]]
+name = "kmedoids"
+version = "0.5.3.1"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6e/b4/457e552aa362cc746fbf0c461ab1a9bd7794db3321f82586601769f27112/kmedoids-0.5.3.1-cp312-cp312-macosx_10_12_x86_64.macosx_11_0_arm64.macosx_10_12_universal2.whl", hash = "sha256:6938b62b2dfd5ea13de22b9b04bbf60377966a7882a2900a7502baa2037afacf", size = 915687, upload-time = "2024-12-09T20:32:13.136Z" },
+    { url = "https://files.pythonhosted.org/packages/75/7c/978f448934eeb6ed61843bf251c55440a4e2f3e6a25a1d0aa278191b1eaa/kmedoids-0.5.3.1-cp312-cp312-manylinux_2_28_aarch64.whl", hash = "sha256:3d74217511e9f8ba1d7a4ffdf4a910a9e7378aaeb344b2807e748963b594c97c", size = 511029, upload-time = "2024-12-09T20:32:15.892Z" },
+    { url = "https://files.pythonhosted.org/packages/be/1e/e246a82bc2f4c0b64dbe2e9d22b812f04be1e76561ac7dc57134bb5a2eff/kmedoids-0.5.3.1-cp312-cp312-manylinux_2_28_x86_64.whl", hash = "sha256:05fbe399707be0b8657fcdf67a5fa474cb43d4dae37832304710bd2b88be3e66", size = 527717, upload-time = "2024-12-09T20:32:17.966Z" },
+    { url = "https://files.pythonhosted.org/packages/2c/0f/906d6334ca9b790b6bcd699ac4251beec851d08e61c250caa5200e1d1b00/kmedoids-0.5.3.1-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:c32ecac5d8e386b806ef726050588c6661d4eb937e9c8ebe1c024e015a10344e", size = 555259, upload-time = "2024-12-09T20:32:19.71Z" },
+    { url = "https://files.pythonhosted.org/packages/72/fd/4da1cb16c2ea80bead54e4abc28df9434e6c10c30bdb18ca97fd6e58eaa9/kmedoids-0.5.3.1-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:91227e2e49f7a41186cc9255c93c386966eb1f48975e14116b945a47f62f1f39", size = 587903, upload-time = "2024-12-09T20:32:21.107Z" },
+    { url = "https://files.pythonhosted.org/packages/df/71/338fefe93616236ffa179d428329140cbeedd018d4603ad880f752f8f9a6/kmedoids-0.5.3.1-cp312-none-win_amd64.whl", hash = "sha256:fd10336ecc339b3c0c162c19089b6405836cc6c3eaf65ec3bf93b13012aaee51", size = 378973, upload-time = "2024-12-09T20:32:22.414Z" },
+    { url = "https://files.pythonhosted.org/packages/d2/e8/dadb494ced371630e266c793488ac7e2b99962d25ca3da8afa0e872f2afa/kmedoids-0.5.3.1-cp313-cp313-macosx_10_12_x86_64.macosx_11_0_arm64.macosx_10_12_universal2.whl", hash = "sha256:d53c1f8109e1d760382dee40e91ea317e7ec121cb30f671eaf4180784838457e", size = 915156, upload-time = "2024-12-09T20:32:24.144Z" },
+    { url = "https://files.pythonhosted.org/packages/97/c6/9fc8225f32310806186c88ae61ab9006c61b346baf49f278a1ece5b591bd/kmedoids-0.5.3.1-cp313-cp313-manylinux_2_28_aarch64.whl", hash = "sha256:068e7d73cbcb4a001c156c9b7a3a6b35acf754a557c0af00db867c6d1f2d336f", size = 510681, upload-time = "2024-12-09T20:32:25.999Z" },
+    { url = "https://files.pythonhosted.org/packages/cd/bd/e644a7044560817058b7a2f1bad40803341c081f80c05a5960e2239645e3/kmedoids-0.5.3.1-cp313-cp313-manylinux_2_28_x86_64.whl", hash = "sha256:0d8ced64fb5a66910bd8b7a63d7d7de1c1bcc0ec5875bd1817751b5ba37ad98d", size = 527510, upload-time = "2024-12-09T20:32:28.28Z" },
+    { url = "https://files.pythonhosted.org/packages/18/f3/dd4a3a597f8873a5f5d210347c91700120b2164bffe45a4447c19a0ee961/kmedoids-0.5.3.1-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:51aa773b0198247d0b7e4c34f46222c4171cce2f08350398a2114be75cf2fe88", size = 554955, upload-time = "2024-12-09T20:32:30.418Z" },
+    { url = "https://files.pythonhosted.org/packages/13/00/db275119d948dfc0209ee0c553eb5563c1ea000222b34662ed732b8d1dc8/kmedoids-0.5.3.1-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:001653add88e79f657995ee0b45cf5499b259211f67639a7dbed4e0eeef23b28", size = 587849, upload-time = "2024-12-09T20:32:32.209Z" },
+    { url = "https://files.pythonhosted.org/packages/35/61/4c0b98f0c220322e8ec07d7f0efa98bc2484dc841b073c688ca716149712/kmedoids-0.5.3.1-cp313-none-win_amd64.whl", hash = "sha256:310273843091960798f27dd2087e9f375dcd78db71e8cfb3ee0004e7b7d7a54c", size = 378713, upload-time = "2024-12-09T20:32:33.616Z" },
+]
+
+[[package]]
 name = "lark"
 version = "1.2.2"
 source = { registry = "https://pypi.org/simple" }
@@ -2347,6 +2366,17 @@ wheels = [
 ]
 
 [[package]]
+name = "scikit-learn-extra"
+version = "0.3.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+    { name = "scikit-learn" },
+    { name = "scipy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/1d/9a/dd90a682fe322b3f4d3bd909dc3316883223e1cbe71e15e7d729e3630d57/scikit-learn-extra-0.3.0.tar.gz", hash = "sha256:7912d43384470d77609e53819d0291967f21010e5c3a3847f9026fc02f9c7893", size = 818996, upload-time = "2023-03-27T11:23:14.477Z" }
+
+[[package]]
 name = "scipy"
 version = "1.16.2"
 source = { registry = "https://pypi.org/simple" }
@@ -2722,6 +2752,7 @@ source = { editable = "." }
 dependencies = [
     { name = "ipykernel" },
     { name = "ipywidgets" },
+    { name = "kmedoids" },
     { name = "lightning" },
     { name = "matplotlib" },
     { name = "nbformat" },
@@ -2730,6 +2761,7 @@ dependencies = [
     { name = "pandas" },
     { name = "plotly" },
     { name = "scikit-learn" },
+    { name = "scikit-learn-extra" },
     { name = "scipy" },
     { name = "torch" },
     { name = "torchvision" },
@@ -2741,6 +2773,7 @@ dependencies = [
 requires-dist = [
     { name = "ipykernel", specifier = ">=6.30.1" },
     { name = "ipywidgets", specifier = ">=8.1.7" },
+    { name = "kmedoids", specifier = ">=0.5.3.1" },
     { name = "lightning", specifier = ">=2.5.5" },
     { name = "matplotlib", specifier = ">=3.10.5" },
     { name = "nbformat", specifier = ">=5.10.4" },
@@ -2749,6 +2782,7 @@ requires-dist = [
     { name = "pandas", specifier = ">=2.3.2" },
     { name = "plotly", specifier = ">=6.3.0" },
     { name = "scikit-learn", specifier = ">=1.7.2" },
+    { name = "scikit-learn-extra", specifier = ">=0.3.0" },
     { name = "scipy", specifier = ">=1.16.1" },
     { name = "torch", specifier = ">=2.8.0", index = "https://download.pytorch.org/whl/cu126" },
     { name = "torchvision", specifier = ">=0.23.0", index = "https://download.pytorch.org/whl/cu126" },

@@ -62,6 +62,33 @@ def build_knn_graph(Z, k=20):
     return A
 
 
+def build_knn_graph_w2(points, logvars, k=20):
+    """
+    Build k-NN graph where edge weight = W2 distance between diagonal Gaussians.
+    points: (N, d) means
+    logvars: (N, d) log-variances
+    """
+    def w2_diag(mu1, lv1, mu2, lv2):
+        s1 = np.sqrt(np.exp(lv1))
+        s2 = np.sqrt(np.exp(lv2))
+        return np.sqrt(np.sum((mu1 - mu2)**2) + np.sum((s1 - s2)**2))
+
+    nn = NearestNeighbors(n_neighbors=k, algorithm='auto').fit(points)
+    distances, indices = nn.kneighbors(points)
+    rows, cols, data = [], [], []
+    N = points.shape[0]
+    for i in range(N):
+        for j_idx in indices[i]:
+            w = w2_diag(points[i], logvars[i], points[j_idx], logvars[j_idx])
+            rows.append(i); cols.append(j_idx); data.append(w)
+    # symmetrize
+    rows2 = rows + cols
+    cols2 = cols + rows
+    data2 = data + data
+    A = csr_matrix((data2, (rows2, cols2)), shape=(N, N))
+    return A
+
+
 def compute_medoids(Z, labels, n_clusters):
     """
     Compute cluster medoids (most representative actual points).
@@ -81,13 +108,15 @@ def compute_medoids(Z, labels, n_clusters):
     """
     medoid_indices = []
     medoids = []
+    N = Z.shape[0]
 
     for c in range(n_clusters):
         idxs = np.where(labels == c)[0]
         if len(idxs) == 0:
             # Empty cluster: use zero vector
-            medoid_indices.append(None)
-            medoids.append(np.zeros(Z.shape[1]))
+            fallback_idx = 0
+            medoid_indices.append(fallback_idx)
+            medoids.append(Z[fallback_idx].copy())
             continue
 
         # Get all points in this cluster

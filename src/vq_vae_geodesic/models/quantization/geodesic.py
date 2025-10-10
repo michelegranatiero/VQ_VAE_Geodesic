@@ -9,9 +9,11 @@ import numpy as np
 from scipy.sparse.csgraph import shortest_path
 from sklearn.manifold import MDS
 from sklearn.cluster import KMeans
+# from sklearn_extra.cluster import KMedoids
+from kmedoids import KMedoids
 from sklearn.metrics import pairwise_distances_argmin_min
 
-from .utils import subsample_indices, build_knn_graph, compute_medoids
+from .utils import build_knn_graph_w2, subsample_indices, build_knn_graph, compute_medoids
 
 
 class GeodesicQuantizer:
@@ -27,13 +29,12 @@ class GeodesicQuantizer:
     6. Use medoids as final codewords
     """
 
-    def __init__(self, n_codewords=256, n_chunks=None, chunk_size=None, use_var=False, k=20, mds_dim=64, random_state=0):
+    def __init__(self, n_codewords=256, n_chunks=None, chunk_size=None, k=20, mds_dim=64, random_state=42):
         """
         Args:
             n_codewords: Size of the codebook (K centroids)
             n_chunks: Number of chunks to split each latent vector into (auto-computed if None)
             chunk_size: Dimensionality of each chunk (auto-computed if None)
-            use_var: Whether to concatenate variance features
             k: Number of neighbors for k-NN graph
             mds_dim: Dimensionality for MDS embedding
             random_state: Random seed for reproducibility
@@ -44,15 +45,21 @@ class GeodesicQuantizer:
         self.n_chunks = n_chunks
         self.chunk_size = chunk_size
         self.n_codewords = n_codewords
-        self.use_var = use_var
         self.k = k
         self.mds_dim = mds_dim
         self.random_state = random_state
         self.codebook_chunks = None  # Final codebook of chunk centroids
+        self.codebook_sigmas = None  # Final codebook of chunk sigmas (stddev)
         self.medoids_idx_global = None  # Indices of medoids in original data
         self.idx_sub = None  # Indices of subsampled points
 
-    def chunk_latents(self, mu, logvar=None):
+        self.mu_std = None
+        self.mu_mean = None
+        self.sigma_std = None
+        self.sigma_mean = None
+        self.D_geo = None  # Geodesic distance matrix on subsampled points
+
+    def chunk_latents(self, mu, logvar):
         """
         Split latent vectors into chunks for finer-grained quantization.
 
@@ -71,56 +78,48 @@ class GeodesicQuantizer:
         N, D = mu.shape
         assert D % self.n_chunks == 0, "LATENT_DIM must be divisible by n_chunks"
         mus_chunks = mu.reshape(N, self.n_chunks, self.chunk_size)
-        if logvar is not None:
-            logvar_chunks = logvar.reshape(N, self.n_chunks, self.chunk_size)
-        else:
-            logvar_chunks = None
+        logvar_chunks = logvar.reshape(N, self.n_chunks, self.chunk_size)
         return mus_chunks, logvar_chunks
 
-    def flatten_chunks(self, mus_chunks, logvar_chunks=None):
+    def flatten_chunks(self, mus_chunks, logvar_chunks):
         """
         Flatten chunks into a single array of points for clustering.
 
         Transforms (N, n_chunks, chunk_size) -> (N*n_chunks, chunk_size)
         so we can treat each chunk independently.
-
-        Args:
-            mus_chunks: Chunked means (N, n_chunks, chunk_size)
-            logvar_chunks: Chunked log-variances (N, n_chunks, chunk_size) or None
-
-        Returns:
-            points: Flattened chunks (N*n_chunks, chunk_size)
-            logvars_pts: Flattened log-variances (N*n_chunks, chunk_size) or None
         """
         points = mus_chunks.reshape(-1, self.chunk_size)
-        if logvar_chunks is not None:
-            logvars_pts = logvar_chunks.reshape(-1, self.chunk_size)
-        else:
-            logvars_pts = None
+        logvars_pts = logvar_chunks.reshape(-1, self.chunk_size)
         return points, logvars_pts
 
-    def build_features(self, points, logvars_pts=None):
+    def build_features(self, points, sigmas):
         """
         Build feature vectors for clustering.
-
-        Optionally augments chunk vectors with variance information
-        to account for uncertainty in the latent space.
-
-        Args:
-            points: Chunk vectors (N*n_chunks, chunk_size)
-            logvars_pts: Log-variances (N*n_chunks, chunk_size) or None
-
-        Returns:
-            features: Feature vectors (N*n_chunks, chunk_size or 2*chunk_size)
         """
-        if self.use_var and logvars_pts is not None:
-            # Concatenate mean and std for richer representation
-            features = np.concatenate([points, np.sqrt(np.exp(logvars_pts))], axis=1)
-        else:
-            features = points.copy()
-        return features
+        # Concatenate mean and std for richer representation
+        features = np.concatenate([points, sigmas], axis=1)
 
-    def fit(self, mu, logvar=None):
+        return features
+    
+    
+    def _fit_normalization_params(self, points, sigmas):
+        """
+        Calcola e salva i parametri di normalizzazione per points e sigmas.
+        """
+        self.mu_mean = points.mean(axis=0, keepdims=True)
+        self.mu_std = points.std(axis=0, keepdims=True) + 1e-9
+        self.sigma_mean = sigmas.mean(axis=0, keepdims=True)
+        self.sigma_std = sigmas.std(axis=0, keepdims=True) + 1e-9
+    
+    def _normalize(self, points, sigmas):
+        """
+        Normalizza points e sigmas usando i parametri salvati.
+        """
+        points_norm = (points - self.mu_mean) / self.mu_std
+        sigmas_norm = (sigmas - self.sigma_mean) / self.sigma_std
+        return points_norm, sigmas_norm
+
+    def fit(self, mu, logvar):
         """
         Fit the geodesic quantizer to training latents.
 
@@ -152,61 +151,117 @@ class GeodesicQuantizer:
         # Step 1: Split into chunks
         mus_chunks, logvar_chunks = self.chunk_latents(mu, logvar)
         points, logvars_pts = self.flatten_chunks(mus_chunks, logvar_chunks)
-        features = self.build_features(points, logvars_pts)
+
+        # Convert logvars to stddevs (sigmas)
+        sigmas = np.sqrt(np.exp(logvars_pts))
+
+        # features = self.build_features(points, sigmas)
+
+        # Stima e salva i parametri di normalizzazione
+        self._fit_normalization_params(points, sigmas)
+        points_normalized, sigmas_normalized = self._normalize(points, sigmas)
 
         # Step 2: Subsample for efficiency (max 5000 points)
-        self.idx_sub = subsample_indices(features.shape[0], max_pts=5000)
-        X_sub = features[self.idx_sub]
+        self.idx_sub = subsample_indices(points_normalized.shape[0], max_pts=5000)
+        points_sub = points_normalized[self.idx_sub]
+        sigmas_sub = sigmas_normalized[self.idx_sub]
 
         # Step 3: Build k-NN graph (captures local manifold structure)
-        A = build_knn_graph(X_sub, k=self.k)
+        # A = build_knn_graph(points_sub, k=self.k)
+        print("Building k-NN graph with W-2 distances...")
+        A = build_knn_graph_w2(points_sub, sigmas_sub, k=self.k)
 
         # Step 4: Compute geodesic distances via shortest paths
         # This respects the manifold geometry instead of using Euclidean distance
-        D_geo = shortest_path(A, method='D', directed=False)
+        print("Computing shortest paths for geodesic distances...")
+        D_geo = shortest_path(A, method='D', directed=False)  # Outputs a matrix with shortest path distances
+        self.D_geo = D_geo  # Salva la matrice delle distanze geodetiche
 
-        # Step 5: MDS embedding to preserve geodesic distances in lower dimensions
-        mds = MDS(n_components=self.mds_dim, dissimilarity='precomputed',
-                  random_state=self.random_state, n_init=1, max_iter=300)
-        X_mds = mds.fit_transform(D_geo)
 
-        # Step 6: K-means clustering in MDS space
-        kmeans = KMeans(n_clusters=self.n_codewords, random_state=self.random_state).fit(X_mds)
-        labels_sub = kmeans.labels_
-
-        # Step 7: Compute medoids (most representative actual points per cluster)
-        # Medoids are better than centroids for preserving original data distribution
-        points_sub = points[self.idx_sub]
-        medoid_idxs_local, medoids_sub = compute_medoids(points_sub, labels_sub, n_clusters=self.n_codewords)
+        # Step 5: K-medoids clustering directly on geodesic distance matrix
+        print("Clustering with K-medoids on geodesic distances (kmedoids package)...")
+        # kmedoids expects a distance matrix and returns medoid indices
+        km = KMedoids(n_clusters=self.n_codewords, metric='precomputed', init='random', random_state=self.random_state)
+        labels_sub = km.fit_predict(D_geo)
+        medoid_idxs_local = km.medoid_indices_
+        # Medoids in original space: map local idx -> global index; then pick from original points (not normalized)
         self.medoids_idx_global = self.idx_sub[medoid_idxs_local]
-        self.codebook_chunks = points[self.medoids_idx_global]
+        self.codebook_chunks = points[self.medoids_idx_global]  # original scale
+        self.codebook_sigmas = sigmas[self.medoids_idx_global]  # salva anche le sigmas dei medoids
+
+
+        # # Step 5: Multi-dimensional scaling to preserve geodesic distances in lower dimensions
+        # print("Performing MDS embedding...")
+        # mds = MDS(n_components=self.mds_dim, dissimilarity='precomputed',
+        #           random_state=self.random_state, n_init=4, max_iter=300)
+        # X_mds = mds.fit_transform(D_geo)
+
+        # # Step 6: K-means clustering in MDS space
+        # print("Clustering with K-means...")
+        # kmeans = KMeans(n_clusters=self.n_codewords, random_state=self.random_state).fit(X_mds)
+        # labels_sub = kmeans.labels_
+
+        # # Step 7: Compute medoids (most representative actual points per cluster)
+        # # Medoids are better than centroids for preserving original data distribution
+        # points_sub = points[self.idx_sub]
+        # print("Computing medoids...")
+        # medoid_idxs_local, medoids_sub = compute_medoids(points_sub, labels_sub, n_clusters=self.n_codewords)
+        # self.medoids_idx_global = self.idx_sub[medoid_idxs_local]
+        # self.codebook_chunks = points[self.medoids_idx_global]
+
+        if self.codebook_chunks is None or self.codebook_chunks.shape[0] != self.n_codewords:
+            raise RuntimeError("Codebook construction failed or produced wrong shape.")
 
         return self
 
-    def assign(self, mu):
+    def assign(self, mu, logvar):
         """
         Assign each latent vector to nearest codebook entries.
 
-        For each chunk of each latent vector, finds the closest
-        codebook entry using Euclidean distance.
+        For training data (same as fit): uses precomputed D_geo.
+        For new data (e.g., validation): builds a new k-NN graph including new chunks and medoids,
+        computes geodesic distances, and assigns each chunk to the nearest medoid.
 
         Args:
             mu: Latent means to quantize (N, D)
+            logvar: Latent log-variances (N, D)
 
         Returns:
             codes_per_image: Codebook indices (N, n_chunks)
                 Each row contains n_chunks indices into the codebook
         """
         N, D = mu.shape
-        # Split into chunks
-        mus_chunks, _ = self.chunk_latents(mu)
-        points, _ = self.flatten_chunks(mus_chunks)
+        mus_chunks, logvar_chunks = self.chunk_latents(mu, logvar)
+        points, logvars_pts = self.flatten_chunks(mus_chunks, logvar_chunks)
+        sigmas = np.sqrt(np.exp(logvars_pts))
 
-        # Find nearest codebook entry for each chunk
-        assigned_point_idx, _ = pairwise_distances_argmin_min(points, self.codebook_chunks)
+        # Normalizza points e sigmas con i parametri salvati
+        points_norm, sigmas_norm = self._normalize(points, sigmas)
 
-        # Reshape to (N, n_chunks) format
-        codes_per_image = assigned_point_idx.reshape(N, self.n_chunks)
+        # Generalized: always build k-NN graph on [input chunks + medoids], normalize both
+        medoids = self.codebook_chunks
+        medoids_sigmas = self.codebook_sigmas if self.codebook_sigmas is not None else np.zeros_like(medoids)
+        medoids_norm, medoids_sigmas_norm = self._normalize(medoids, medoids_sigmas)
+
+        all_points = np.concatenate([points_norm, medoids_norm], axis=0)
+        all_sigmas = np.concatenate([sigmas_norm, medoids_sigmas_norm], axis=0)
+
+        from .utils import build_knn_graph_w2
+        k_graph = self.k
+        print("Building k-NN graph for assignment (chunks+medoids)...")
+        A = build_knn_graph_w2(all_points, all_sigmas, k=k_graph)
+
+        print("Computing geodesic distances for assignment...")
+        D_geo = shortest_path(A, method='D', directed=False)
+
+        n_chunks = points.shape[0]
+        n_medoids = medoids.shape[0]
+        chunk_idx = np.arange(n_chunks)
+        medoid_idx = np.arange(n_chunks, n_chunks + n_medoids)
+
+        D_to_medoids = D_geo[chunk_idx[:, None], medoid_idx[None, :]]  # shape (n_chunks, n_medoids)
+        assigned_idx = np.argmin(D_to_medoids, axis=1)
+        codes_per_image = assigned_idx.reshape(N, self.n_chunks)
         return codes_per_image
 
     def save(self, path, codes_per_image=None, codes_grid=None):
@@ -221,6 +276,7 @@ class GeodesicQuantizer:
         # Save quantizer parameters along with codebook
         np.savez_compressed(path,
                             codebook_chunks=self.codebook_chunks,  # The learned codebook (K, chunk_size)
+                            codebook_sigmas=self.codebook_sigmas,  # The learned codebook sigmas (K, chunk_size)
                             medoid_idxs_global=self.medoids_idx_global,  # Indices of medoids
                             subset_indices=self.idx_sub,  # Subsampled indices used for fitting
                             codes_per_image=codes_per_image,  # Assigned codes per image
@@ -229,7 +285,10 @@ class GeodesicQuantizer:
                             n_chunks=self.n_chunks,
                             chunk_size=self.chunk_size,
                             n_codewords=self.n_codewords,
-                            use_var=self.use_var
+                            mu_mean=self.mu_mean,
+                            mu_std=self.mu_std,
+                            sigma_mean=self.sigma_mean,
+                            sigma_std=self.sigma_std,
                             )
 
     @classmethod
@@ -250,12 +309,16 @@ class GeodesicQuantizer:
             n_codewords=int(data['n_codewords']),
             n_chunks=int(data['n_chunks']),
             chunk_size=int(data['chunk_size']),
-            use_var=bool(data['use_var'])
         )
 
         # Load fitted codebook and metadata
         quantizer.codebook_chunks = data['codebook_chunks']
+        quantizer.codebook_sigmas = data['codebook_sigmas'] if 'codebook_sigmas' in data else None
         quantizer.medoids_idx_global = data['medoid_idxs_global']
         quantizer.idx_sub = data['subset_indices']
+        quantizer.mu_mean = data['mu_mean']
+        quantizer.mu_std = data['mu_std']
+        quantizer.sigma_mean = data['sigma_mean']
+        quantizer.sigma_std = data['sigma_std']
 
         return quantizer
