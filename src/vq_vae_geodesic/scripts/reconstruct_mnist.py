@@ -101,7 +101,7 @@ def launch_reconstruction():
     print(f"Validation MSE (quantized): {mse_quantized_val:.6f}")
     print(f"Quantization loss increase: {loss_increase_val:.2f}%")
 
-    print(f"\n✓ Reconstructions saved to {recons_dir()}")
+    print(f"\n Reconstructions saved to {recons_dir()}")
 
 
 if __name__ == "__main__":

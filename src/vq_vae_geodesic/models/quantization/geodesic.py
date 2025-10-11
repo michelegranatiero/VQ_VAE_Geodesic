@@ -6,6 +6,7 @@ instead of Euclidean distances, respecting the manifold structure
 of the latent space.
 """
 import numpy as np
+import torch
 from scipy.sparse.csgraph import shortest_path
 from sklearn.manifold import MDS
 from sklearn.cluster import KMeans
@@ -53,11 +54,10 @@ class GeodesicQuantizer:
         self.medoids_idx_global = None  # Indices of medoids in original data
         self.idx_sub = None  # Indices of subsampled points
 
-        self.mu_std = None
-        self.mu_mean = None
-        self.sigma_std = None
-        self.sigma_mean = None
-        self.D_geo = None  # Geodesic distance matrix on subsampled points
+        # self.mu_std = None
+        # self.mu_mean = None
+        # self.sigma_std = None
+        # self.sigma_mean = None
 
     def chunk_latents(self, mu, logvar):
         """
@@ -102,22 +102,22 @@ class GeodesicQuantizer:
         return features
     
     
-    def _fit_normalization_params(self, points, sigmas):
-        """
-        Calcola e salva i parametri di normalizzazione per points e sigmas.
-        """
-        self.mu_mean = points.mean(axis=0, keepdims=True)
-        self.mu_std = points.std(axis=0, keepdims=True) + 1e-9
-        self.sigma_mean = sigmas.mean(axis=0, keepdims=True)
-        self.sigma_std = sigmas.std(axis=0, keepdims=True) + 1e-9
+    # def _fit_normalization_params(self, points, sigmas):
+    #     """
+    #     Calcola e salva i parametri di normalizzazione per points e sigmas.
+    #     """
+    #     self.mu_mean = points.mean(axis=0, keepdims=True)
+    #     self.mu_std = points.std(axis=0, keepdims=True) + 1e-9
+    #     self.sigma_mean = sigmas.mean(axis=0, keepdims=True)
+    #     self.sigma_std = sigmas.std(axis=0, keepdims=True) + 1e-9
     
-    def _normalize(self, points, sigmas):
-        """
-        Normalizza points e sigmas usando i parametri salvati.
-        """
-        points_norm = (points - self.mu_mean) / self.mu_std
-        sigmas_norm = (sigmas - self.sigma_mean) / self.sigma_std
-        return points_norm, sigmas_norm
+    # def _normalize(self, points, sigmas):
+    #     """
+    #     Normalizza points e sigmas usando i parametri salvati.
+    #     """
+    #     points_norm = (points - self.mu_mean) / self.mu_std
+    #     sigmas_norm = (sigmas - self.sigma_mean) / self.sigma_std
+    #     return points_norm, sigmas_norm
 
     def fit(self, mu, logvar):
         """
@@ -157,34 +157,27 @@ class GeodesicQuantizer:
 
         # features = self.build_features(points, sigmas)
 
-        # Stima e salva i parametri di normalizzazione
-        self._fit_normalization_params(points, sigmas)
-        points_normalized, sigmas_normalized = self._normalize(points, sigmas)
-
         # Step 2: Subsample for efficiency (max 5000 points)
-        self.idx_sub = subsample_indices(points_normalized.shape[0], max_pts=5000)
-        points_sub = points_normalized[self.idx_sub]
-        sigmas_sub = sigmas_normalized[self.idx_sub]
+        self.idx_sub = subsample_indices(points.shape[0], max_pts=5000)
+        points_sub = points[self.idx_sub]
+        sigmas_sub = sigmas[self.idx_sub]
 
         # Step 3: Build k-NN graph (captures local manifold structure)
         # A = build_knn_graph(points_sub, k=self.k)
-        print("Building k-NN graph with W-2 distances...")
+        print("Building k-NN graph with W-2 distances (no normalization)...")
         A = build_knn_graph_w2(points_sub, sigmas_sub, k=self.k)
 
         # Step 4: Compute geodesic distances via shortest paths
         # This respects the manifold geometry instead of using Euclidean distance
         print("Computing shortest paths for geodesic distances...")
         D_geo = shortest_path(A, method='D', directed=False)  # Outputs a matrix with shortest path distances
-        self.D_geo = D_geo  # Salva la matrice delle distanze geodetiche
-
 
         # Step 5: K-medoids clustering directly on geodesic distance matrix
         print("Clustering with K-medoids on geodesic distances (kmedoids package)...")
-        # kmedoids expects a distance matrix and returns medoid indices
         km = KMedoids(n_clusters=self.n_codewords, metric='precomputed', init='random', random_state=self.random_state)
-        labels_sub = km.fit_predict(D_geo)
+        km.fit(D_geo)
         medoid_idxs_local = km.medoid_indices_
-        # Medoids in original space: map local idx -> global index; then pick from original points (not normalized)
+        # Medoids in original space: map local idx -> global index; then pick from original points
         self.medoids_idx_global = self.idx_sub[medoid_idxs_local]
         self.codebook_chunks = points[self.medoids_idx_global]  # original scale
         self.codebook_sigmas = sigmas[self.medoids_idx_global]  # salva anche le sigmas dei medoids
@@ -211,16 +204,11 @@ class GeodesicQuantizer:
 
         if self.codebook_chunks is None or self.codebook_chunks.shape[0] != self.n_codewords:
             raise RuntimeError("Codebook construction failed or produced wrong shape.")
-
         return self
 
     def assign(self, mu, logvar):
         """
-        Assign each latent vector to nearest codebook entries.
-
-        For training data (same as fit): uses precomputed D_geo.
-        For new data (e.g., validation): builds a new k-NN graph including new chunks and medoids,
-        computes geodesic distances, and assigns each chunk to the nearest medoid.
+        Assign each latent vector to nearest codebook entries using direct Wasserstein-2 distance.
 
         Args:
             mu: Latent means to quantize (N, D)
@@ -235,32 +223,22 @@ class GeodesicQuantizer:
         points, logvars_pts = self.flatten_chunks(mus_chunks, logvar_chunks)
         sigmas = np.sqrt(np.exp(logvars_pts))
 
-        # Normalizza points e sigmas con i parametri salvati
-        points_norm, sigmas_norm = self._normalize(points, sigmas)
+        # Convert to torch tensors (float32, cpu)
+        points_t = torch.from_numpy(points).float()
+        sigmas_t = torch.from_numpy(sigmas).float()
+        medoids_t = torch.from_numpy(self.codebook_chunks).float()
+        medoids_sigmas_t = torch.from_numpy(self.codebook_sigmas if self.codebook_sigmas is not None else np.zeros_like(self.codebook_chunks)).float()
 
-        # Generalized: always build k-NN graph on [input chunks + medoids], normalize both
-        medoids = self.codebook_chunks
-        medoids_sigmas = self.codebook_sigmas if self.codebook_sigmas is not None else np.zeros_like(medoids)
-        medoids_norm, medoids_sigmas_norm = self._normalize(medoids, medoids_sigmas)
 
-        all_points = np.concatenate([points_norm, medoids_norm], axis=0)
-        all_sigmas = np.concatenate([sigmas_norm, medoids_sigmas_norm], axis=0)
+        # Vettorizzato: calcola tutte le distanze W2 tra chunks e medoids
+        # Formula: W2^2 = ||mu1 - mu2||^2 + ||sigma1 - sigma2||^2
+        # points_t: (P, d), medoids_t: (M, d) => (P, M, d)
+        diff_mu = points_t.unsqueeze(1) - medoids_t.unsqueeze(0)  # (P, M, d)
+        diff_sigma = sigmas_t.unsqueeze(1) - medoids_sigmas_t.unsqueeze(0)  # (P, M, d)
+        dists2 = (diff_mu ** 2).sum(dim=2) + (diff_sigma ** 2).sum(dim=2)  # (P, M)
+        dists = torch.sqrt(dists2 + 1e-8)  # (P, M)
 
-        from .utils import build_knn_graph_w2
-        k_graph = self.k
-        print("Building k-NN graph for assignment (chunks+medoids)...")
-        A = build_knn_graph_w2(all_points, all_sigmas, k=k_graph)
-
-        print("Computing geodesic distances for assignment...")
-        D_geo = shortest_path(A, method='D', directed=False)
-
-        n_chunks = points.shape[0]
-        n_medoids = medoids.shape[0]
-        chunk_idx = np.arange(n_chunks)
-        medoid_idx = np.arange(n_chunks, n_chunks + n_medoids)
-
-        D_to_medoids = D_geo[chunk_idx[:, None], medoid_idx[None, :]]  # shape (n_chunks, n_medoids)
-        assigned_idx = np.argmin(D_to_medoids, axis=1)
+        assigned_idx = torch.argmin(dists, dim=1).cpu().numpy()
         codes_per_image = assigned_idx.reshape(N, self.n_chunks)
         return codes_per_image
 
