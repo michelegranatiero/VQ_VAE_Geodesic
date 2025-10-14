@@ -2,6 +2,7 @@
 Train VAE on MNIST dataset.
 """
 import torch
+import wandb
 from vq_vae_geodesic.hyperparameters import get_mnist_config
 from vq_vae_geodesic.utils import set_seed
 
@@ -9,7 +10,7 @@ from vq_vae_geodesic.data.loaders import get_MNIST_loaders
 from vq_vae_geodesic.models.modules.vae import build_vae_from_config
 from vq_vae_geodesic.training.losses import vae_loss_bce
 from vq_vae_geodesic.config import checkpoint_dir
-from vq_vae_geodesic.training import fit_vae
+from vq_vae_geodesic.training.train import fit_vae
 
 RESUME = False  # Set to True to resume from checkpoint
 
@@ -18,7 +19,7 @@ def launch_train(resume=False):
     config = get_mnist_config()
     set_seed(config.seed)
 
-    # You can override parameters here if needed
+    # Override parameters here if needed
     # config.training_params.num_epochs = 50
     # config.training_params.learning_rate = 1e-3
 
@@ -49,7 +50,7 @@ def launch_train(resume=False):
     start_epoch = 1
     train_loss_history = []
     val_loss_history = []
-    checkpoint_path = checkpoint_dir() / "checkpoint_mnist.pth"
+    checkpoint_path = checkpoint_dir() / "checkpoint_mnist.pt"
 
     if resume and checkpoint_path.exists():
         print(f"Resuming training from {checkpoint_path}")
@@ -62,6 +63,12 @@ def launch_train(resume=False):
         print(f"Resumed from epoch {start_epoch}")
     else:
         print("Starting training from scratch")
+
+    wandb.init(
+        project="vq_vae_geodesic",
+        name="vae-mnist",
+        config=config.to_dict()
+    )
 
     # Train
     train_loss_avg, val_loss_avg = fit_vae(
@@ -80,8 +87,13 @@ def launch_train(resume=False):
         save_checkpoint_every=config.training_params.save_checkpoint_every
     )
 
+    wandb.finish()
+
     # return train_loss_avg, val_loss_avg
-    print(f"Final Training Loss: {train_loss_avg:.4f}, Final Validation Loss: {val_loss_avg:.4f}")
+    print(f"Final Training Loss: {train_loss_avg[-1]:.4f}, Final Validation Loss: {val_loss_avg[-1]:.4f}")
+    print(f"\nModel and training state saved to {checkpoint_path}")
+    print("\nNext step: Extract latents")
+    print("python -m vq_vae_geodesic.scripts.extract_mnist_latents")
 
 
 if __name__ == "__main__":

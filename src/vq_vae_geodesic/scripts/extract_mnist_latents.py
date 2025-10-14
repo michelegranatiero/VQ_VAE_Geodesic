@@ -7,7 +7,7 @@ from vq_vae_geodesic.config import checkpoint_dir, latents_dir
 from vq_vae_geodesic.hyperparameters import get_mnist_config
 from vq_vae_geodesic.data.loaders import get_MNIST_loaders
 from vq_vae_geodesic.models.modules.vae import build_vae_from_config
-from vq_vae_geodesic.evaluation import extract_and_save_latents
+from vq_vae_geodesic.evaluation.extract_latents import extract_and_save_latents
 
 from vq_vae_geodesic.utils import set_seed
 
@@ -19,7 +19,7 @@ def launch_extraction():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Load trained model
-    checkpoint_path = checkpoint_dir() / "main_checkpoint_mnist.pth"
+    checkpoint_path = checkpoint_dir() / "main_checkpoint_mnist.pt"
     if not checkpoint_path.exists():
         raise FileNotFoundError(f"Checkpoint not found at {checkpoint_path}")
 
@@ -30,7 +30,7 @@ def launch_extraction():
     model.eval()
 
     # Get data loaders
-    train_loader, val_loader, _ = get_MNIST_loaders(
+    train_loader, val_loader, test_loader = get_MNIST_loaders(
         batch_size=config.training_params.batch_size, shuffle_train_set=False
     )
 
@@ -42,6 +42,9 @@ def launch_extraction():
 
     print("Extracting validation latents...")
     extract_and_save_latents(model, val_loader, device, save_dir, "val")
+
+    print("Extracting test latents...")
+    extract_and_save_latents(model, test_loader, device, save_dir, "test")
 
     print(f"\nLatents saved to {save_dir}")
     print("\nNext step: Run geodesic quantization")

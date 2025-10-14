@@ -8,25 +8,21 @@ For production use, please use the scripts in the scripts/ folder:
 
 Example usage:
     python scripts/train.py --dataset mnist --epochs 100
-    python scripts/extract_latents.py --checkpoint data/checkpoints/checkpoint_mnist.pth --dataset mnist
+    python scripts/extract_latents.py --checkpoint data/checkpoints/checkpoint_mnist.pt --dataset mnist
     python scripts/quantize.py --latents data/latents/train_latents.npz
-    python scripts/reconstruct.py --checkpoint data/checkpoints/checkpoint_mnist.pth --codebook data/latents/chunk_codebook.npz --dataset mnist
+    python scripts/reconstruct.py --checkpoint data/checkpoints/checkpoint_mnist.pt --codebook data/latents/chunk_codebook.npz --dataset mnist
 """
 import numpy as np
-from vq_vae_geodesic.reconstruct_codebook import recon_from_mu, reconstruct_from_chunk_codebook
-from vq_vae_geodesic.extract_latents import extract_and_save_latents
-from vq_vae_geodesic.train import fit_vae
-from vq_vae_geodesic.losses import vae_loss_bce, vae_loss_mse
-from vq_vae_geodesic.data import get_cifar_loaders, get_MNIST_loaders
+from vq_vae_geodesic.evaluation.reconstruct_codebook import reconstruct_from_mu, reconstruct_from_chunk_codebook
+from vq_vae_geodesic.evaluation.extract_latents import extract_and_save_latents
+from vq_vae_geodesic.training.train import fit_vae
+from vq_vae_geodesic.training.losses import vae_loss_bce, vae_loss_mse
+from vq_vae_geodesic.data.loaders import get_cifar_loaders, get_MNIST_loaders
 from vq_vae_geodesic.utils import set_seed
-from vq_vae_geodesic.models import (
-    Decoder_CIFAR,
-    Decoder_MNIST,
-    Encoder_CIFAR,
-    Encoder_MNIST,
-    VariationalAutoencoder,
-    GeodesicQuantizer,
-)
+from vq_vae_geodesic.models.modules.encoder import Encoder_CIFAR, Encoder_MNIST
+from vq_vae_geodesic.models.modules.decoder import Decoder_CIFAR, Decoder_MNIST
+from vq_vae_geodesic.models.modules.vae import VariationalAutoencoder
+from vq_vae_geodesic.models.quantization.geodesic import GeodesicQuantizer
 from vq_vae_geodesic.hyperparameters import get_mnist_config
 import os
 import torch
@@ -80,7 +76,7 @@ def train_cifar(resume=False):
     start_epoch = 1
     train_loss_history = []
     val_loss_history = []
-    checkpoint_path = "data/checkpoints/checkpoint_cifar.pth"
+    checkpoint_path = "data/checkpoints/checkpoint_cifar.pt"
 
     if resume and os.path.exists(checkpoint_path):
         print(f"Resuming training from {checkpoint_path}")
@@ -120,9 +116,9 @@ def train_mnist(resume=False, extract_latents=False):
 
     For full pipeline:
         python scripts/train.py --dataset mnist --epochs 100
-        python scripts/extract_latents.py --checkpoint data/checkpoints/checkpoint_mnist.pth --dataset mnist
+        python scripts/extract_latents.py --checkpoint data/checkpoints/checkpoint_mnist.pt --dataset mnist
         python scripts/quantize.py --latents data/latents/train_latents.npz
-        python scripts/reconstruct.py --checkpoint data/checkpoints/checkpoint_mnist.pth --codebook data/latents/chunk_codebook.npz --dataset mnist
+        python scripts/reconstruct.py --checkpoint data/checkpoints/checkpoint_mnist.pt --codebook data/latents/chunk_codebook.npz --dataset mnist
     """
     warnings.warn("Use modular scripts in scripts/ folder instead of main.train_mnist()", DeprecationWarning)
     set_seed(SEED)
@@ -141,7 +137,7 @@ def train_mnist(resume=False, extract_latents=False):
     start_epoch = 1
     train_loss_history = []
     val_loss_history = []
-    checkpoint_path = "data/checkpoints/checkpoint_mnist.pth"
+    checkpoint_path = "data/checkpoints/checkpoint_mnist.pt"
 
     if (resume or extract_latents) and os.path.exists(checkpoint_path):
         checkpoint = torch.load(checkpoint_path, map_location=device)
@@ -205,7 +201,7 @@ def train_mnist(resume=False, extract_latents=False):
         print("MSE chunk-codebook recon (train):", mse_codebook_train)
 
         print("[INFO] Recon on TRAIN using mu (baseline)...")
-        mse_mu_train = recon_from_mu(vae, train_loader_no_shuffle, device, out_dir="data/recons_train")
+        mse_mu_train = reconstruct_from_mu(vae, train_loader_no_shuffle, device, out_dir="data/recons_train")
         print("MSE mu recon (train):", mse_mu_train)
 
         npz_val = np.load("data/latents/val_latents.npz")
@@ -218,7 +214,7 @@ def train_mnist(resume=False, extract_latents=False):
         print("MSE chunk-codebook recon (val):", mse_codebook_val)
 
         print("[INFO] Ricostruzione (val) da mu (baseline)...")
-        mse_mu = recon_from_mu(vae, val_loader, device, out_dir="data/recons_val")
+        mse_mu = reconstruct_from_mu(vae, val_loader, device, out_dir="data/recons_val")
         print("MSE mu recon (val):", mse_mu)
 
 
@@ -230,11 +226,11 @@ if __name__ == "__main__":
     print("1. Train VAE:")
     print("   python scripts/train.py --dataset mnist --epochs 100\n")
     print("2. Extract latents:")
-    print("   python scripts/extract_latents.py --checkpoint data/checkpoints/checkpoint_mnist.pth --dataset mnist\n")
+    print("   python scripts/extract_latents.py --checkpoint data/checkpoints/checkpoint_mnist.pt --dataset mnist\n")
     print("3. Build codebook:")
     print("   python scripts/quantize.py --latents data/latents/train_latents.npz\n")
     print("4. Reconstruct:")
-    print("   python scripts/reconstruct.py --checkpoint data/checkpoints/checkpoint_mnist.pth --codebook data/latents/chunk_codebook.npz --dataset mnist\n")
+    print("   python scripts/reconstruct.py --checkpoint data/checkpoints/checkpoint_mnist.pt --codebook data/latents/chunk_codebook.npz --dataset mnist\n")
     print("="*70)
     print("\nRunning legacy demo (for backward compatibility)...\n")
 

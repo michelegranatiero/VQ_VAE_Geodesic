@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
-
+from vq_vae_geodesic.models.modules.encoder import Encoder_MNIST
+from vq_vae_geodesic.models.modules.decoder import Decoder_MNIST
 
 class VariationalAutoencoder(nn.Module):
     def __init__(self, encoder, decoder):
@@ -28,8 +29,6 @@ class VariationalAutoencoder(nn.Module):
 
 
 def build_vae_from_config(arch_params):
-    from vq_vae_geodesic.models.modules.encoder import Encoder_MNIST
-    from vq_vae_geodesic.models.modules.decoder import Decoder_MNIST
 
     encoder = Encoder_MNIST(
         arch_params.in_channels,
@@ -47,8 +46,10 @@ def build_vae_from_config(arch_params):
 
 if __name__ == "__main__":
     # Quick test
-    x = torch.randn(1, 3, 32, 32)
-    vae = VariationalAutoencoder(hidden_channels=64, latent_dim=2)
+    x = torch.randn(1, 1, 28, 28)
+    encoder = Encoder_MNIST(in_channels=1, hidden_channels=64, latent_dim=16)
+    decoder = Decoder_MNIST(out_channels=1, hidden_channels=64, latent_dim=16)
+    vae = VariationalAutoencoder(encoder, decoder)
     x_recon, mu, logvar = vae(x)
     print(x_recon.shape)
     print(mu.shape)

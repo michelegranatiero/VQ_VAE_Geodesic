@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Optional
 
 # Project root
 ROOT = Path(__file__).parent.parent.parent
@@ -11,15 +10,6 @@ WANDB_DIR = ROOT / "wandb"
 
 # Seed for reproducibility
 SEED = 42
-
-
-def first_existing(*paths: Path | str) -> Optional[Path]:
-    """Return the first path that exists, or None."""
-    for path in paths:
-        if Path(path).exists():
-            return Path(path)
-    return None
-
 
 def data_dir() -> Path:
     """Get the data directory."""

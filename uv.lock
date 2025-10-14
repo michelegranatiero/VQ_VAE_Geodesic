@@ -2366,17 +2366,6 @@ wheels = [
 ]
 
 [[package]]
-name = "scikit-learn-extra"
-version = "0.3.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "numpy" },
-    { name = "scikit-learn" },
-    { name = "scipy" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/1d/9a/dd90a682fe322b3f4d3bd909dc3316883223e1cbe71e15e7d729e3630d57/scikit-learn-extra-0.3.0.tar.gz", hash = "sha256:7912d43384470d77609e53819d0291967f21010e5c3a3847f9026fc02f9c7893", size = 818996, upload-time = "2023-03-27T11:23:14.477Z" }
-
-[[package]]
 name = "scipy"
 version = "1.16.2"
 source = { registry = "https://pypi.org/simple" }
@@ -2761,7 +2750,6 @@ dependencies = [
     { name = "pandas" },
     { name = "plotly" },
     { name = "scikit-learn" },
-    { name = "scikit-learn-extra" },
     { name = "scipy" },
     { name = "torch" },
     { name = "torchvision" },
@@ -2782,7 +2770,6 @@ requires-dist = [
     { name = "pandas", specifier = ">=2.3.2" },
     { name = "plotly", specifier = ">=6.3.0" },
     { name = "scikit-learn", specifier = ">=1.7.2" },
-    { name = "scikit-learn-extra", specifier = ">=0.3.0" },
     { name = "scipy", specifier = ">=1.16.1" },
     { name = "torch", specifier = ">=2.8.0", index = "https://download.pytorch.org/whl/cu126" },
     { name = "torchvision", specifier = ">=0.23.0", index = "https://download.pytorch.org/whl/cu126" },

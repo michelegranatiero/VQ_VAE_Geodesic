@@ -23,7 +23,7 @@ class TrainingParams:
     batch_size: int = 128
     lr: float = 0.001
     weight_decay: float = 1e-5
-    variational_beta: float = 0.1  # Beta parameter for VAE loss
+    variational_beta: float = 1.0  # Beta parameter for VAE loss
     save_checkpoint_every: int = 1
 
 
@@ -33,7 +33,6 @@ class GeodesicQuantizationParams:
     n_chunks: int = 8  # Number of chunks to split latent
     n_codewords: int = 256  # Size of the codebook
     knn_k: int = 20  # Number of neighbors for k-NN graph
-    mds_dim: int = 64  # Dimensionality for MDS embedding
     subsample_max_pts: int = 5000  # Max points for subsampling
     random_state: int = cfg.SEED
 
@@ -60,6 +59,42 @@ class GeodesicQuantizationParams:
 
 
 @dataclass(unsafe_hash=True)
+class PixelCNNParams:
+    """Parameters for PixelCNN autoregressive prior."""
+    embed_dim: int = 64  # Dimension of token embeddings
+    hidden_channels: int = 128  # Channels in hidden layers
+    n_layers: int = 7  # Number of masked conv layers (after first)
+    kernel_size: int = 7  # Kernel size for masked convolutions (must be odd)
+    
+    # Training
+    num_epochs: int = 20
+    batch_size: int = 128
+    lr: float = 2e-4
+    val_split: float = 0.1  # Validation split fraction
+    
+    # Sampling
+    temperature: float = 1.0  # Sampling temperature (>1 more diverse, <1 sharper)
+
+
+@dataclass(unsafe_hash=True)
+class VQVAEParams:
+    """Parameters for VQ-VAE (end-to-end learned codebook)."""
+    num_embeddings: int = 256  # K, codebook size (same as geodesic n_codewords)
+    embedding_dim: int = 4  # D, embedding dimension (same as chunk_size)
+    commitment_cost: float = 0.25  # Beta, weight for commitment loss
+    
+    # Training
+    num_epochs: int = 50
+    batch_size: int = 128
+    lr: float = 1e-3
+    weight_decay: float = 1e-5
+    
+    # Grid shape for latent codes (must match encoder output)
+    grid_h: int = 2
+    grid_w: int = 4
+
+
+@dataclass(unsafe_hash=True)
 class DataParams:
     """Data loading parameters."""
     dataset: str = "mnist"  # 'mnist' or 'cifar'
@@ -74,6 +109,8 @@ class ExperimentConfig:
     arch_params: VAEArchParams = field(default_factory=VAEArchParams)
     training_params: TrainingParams = field(default_factory=TrainingParams)
     quant_params: GeodesicQuantizationParams = field(default_factory=GeodesicQuantizationParams)
+    pixelcnn_params: PixelCNNParams = field(default_factory=PixelCNNParams)
+    vqvae_params: VQVAEParams = field(default_factory=VQVAEParams)
     data_params: DataParams = field(default_factory=DataParams)
 
     use_gpu: bool = True
@@ -85,6 +122,8 @@ class ExperimentConfig:
             "architecture": self.arch_params.__dict__,
             "training": self.training_params.__dict__,
             "quantization": self.quant_params.__dict__,
+            "pixelcnn": self.pixelcnn_params.__dict__,
+            "vqvae": self.vqvae_params.__dict__,
             "data": self.data_params.__dict__,
             "use_gpu": self.use_gpu,
             "seed": self.seed,
@@ -95,18 +134,22 @@ class ExperimentConfig:
 def get_mnist_config() -> ExperimentConfig:
     """Get configuration for MNIST experiments."""
     return ExperimentConfig(
-        arch_params=VAEArchParams(in_channels=1, out_channels=1, hidden_channels=128, latent_dim=32),
-        training_params=TrainingParams(num_epochs=100, batch_size=128, variational_beta=0.1),
-        quant_params=GeodesicQuantizationParams(n_chunks=8, n_codewords=256),
+        arch_params=VAEArchParams(in_channels=1, out_channels=1, hidden_channels=128, latent_dim=128), 
+        training_params=TrainingParams(num_epochs=50, batch_size=128, variational_beta=1.0),
+        quant_params=GeodesicQuantizationParams(n_chunks=16, n_codewords=512, grid_h=4, grid_w=4),   # latent_dim / n_chunks = chunk_size -> 128 / 16 = 8 -> grid 4x4=16  
+        vqvae_params=VQVAEParams(num_embeddings=512, embedding_dim=64, commitment_cost=0.25),
+        pixelcnn_params=PixelCNNParams(embed_dim=64, hidden_channels=128, n_layers=7),
         data_params=DataParams(dataset="mnist", batch_size=128)
     )
 
 
-def get_cifar_config() -> ExperimentConfig:
-    """Get configuration for CIFAR-10 experiments."""
-    return ExperimentConfig(
-        arch_params=VAEArchParams(in_channels=3, out_channels=3, hidden_channels=128, latent_dim=32),
-        training_params=TrainingParams(num_epochs=100, batch_size=128, variational_beta=1.0),
-        quant_params=GeodesicQuantizationParams(n_chunks=8, n_codewords=256),
-        data_params=DataParams(dataset="cifar", batch_size=128)
-    )
+# def get_cifar_config() -> ExperimentConfig:
+#     """Get configuration for CIFAR-10 experiments."""
+#     return ExperimentConfig(
+#         arch_params=VAEArchParams(in_channels=3, out_channels=3, hidden_channels=128, latent_dim=32),
+#         training_params=TrainingParams(num_epochs=100, batch_size=128, variational_beta=1.0),
+#         quant_params=GeodesicQuantizationParams(n_chunks=8, n_codewords=256),
+#         pixelcnn_params=PixelCNNParams(embed_dim=64, hidden_channels=128, n_layers=7),
+#         vqvae_params=VQVAEParams(num_embeddings=256, embedding_dim=4, commitment_cost=0.25),
+#         data_params=DataParams(dataset="cifar", batch_size=128)
+#     )
