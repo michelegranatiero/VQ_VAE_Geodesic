@@ -166,11 +166,11 @@ class GeodesicQuantizer:
         """
         N, D = mu.shape
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        mus_chunks, logvar_chunks = self.chunk_latents(mu, logvar)
-        points, logvars_pts = self.flatten_chunks(mus_chunks, logvar_chunks)
+        mus_chunks, logvar_chunks = self.chunk_latents(mu, logvar) # (N, n_chunks, chunk_size)
+        points, logvars_pts = self.flatten_chunks(mus_chunks, logvar_chunks) # (N*n_chunks, chunk_size)
         sigmas = torch.sqrt(torch.exp(logvars_pts))
 
-        # Sposta tutto su device
+        # Move to device
         points = points.to(device)
         sigmas = sigmas.to(device)
         medoids = self.codebook_chunks.to(device)
@@ -179,13 +179,19 @@ class GeodesicQuantizer:
         assigned_idx = []
         for start in range(0, points.shape[0], batch_size):
             end = min(start + batch_size, points.shape[0])
+            # For each chunk in batch, compute distance to all medoids (codewords)
+            # (batch of points (chunks), n_codewords)
             dists = w2_squared_distance(
                 points[start:end].unsqueeze(1), sigmas[start:end].unsqueeze(1),
                 medoids.unsqueeze(0), medoids_sigmas.unsqueeze(0)
-            )  # (batch, M)
+            )
+            # Find and assign the closest medoid (codeword) index for each chunk
             assigned_idx.append(torch.argmin(dists, dim=1))
+        # Concatenate back all assigned indices over batches
         assigned_idx = torch.cat(assigned_idx, dim=0)
-        codes_per_image = assigned_idx.view(N, self.n_chunks)
+        # Reshape to (N, n_chunks) (order is preserved)
+        # Each latent vector is represented by n_chunks codeword indices
+        codes_per_image = assigned_idx.view(N, self.n_chunks) # (N, n_chunks) codeword indices
         return codes_per_image
 
     def save(self, path):

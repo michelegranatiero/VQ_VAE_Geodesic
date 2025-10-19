@@ -37,7 +37,7 @@ import torch
 #         return x
 
 
-class Decoder_MNIST(nn.Module):
+class Decoder_MNIST_VAE(nn.Module):
     def __init__(self, out_channels: int, hidden_channels: int, latent_dim: int) -> None:
         super().__init__()
         self.hidden_channels = hidden_channels
@@ -45,16 +45,16 @@ class Decoder_MNIST(nn.Module):
         self.fc = nn.Linear(in_features=latent_dim,
                             out_features=hidden_channels*2*7*7)
 
-        self.conv1 = nn.ConvTranspose2d(in_channels=hidden_channels*2,
+        self.conv1 = nn.ConvTranspose2d(in_channels=hidden_channels*2, # in 
                                         out_channels=hidden_channels,
                                         kernel_size=4,
                                         stride=2,
-                                        padding=1)
+                                        padding=1) # out: hidden_channels x 14 x 14
         self.conv2 = nn.ConvTranspose2d(in_channels=hidden_channels,
                                         out_channels=out_channels,
                                         kernel_size=4,
                                         stride=2,
-                                        padding=1)
+                                        padding=1) # out: out_channels x 28 x 28
 
         self.activation = nn.ReLU()
 
@@ -64,7 +64,7 @@ class Decoder_MNIST(nn.Module):
         :returns: a reconstructed image with size [batch, 1, w, h]
         """
         x = self.fc(x)
-        x = x.view(x.size(0), self.hidden_channels*2, 7, 7)
+        x = x.view(x.size(0), self.hidden_channels*2, 7, 7) # reshape as feature map (B, C, H, W)
         x = self.activation(self.conv1(x))
         # Last layer before output is sigmoid, since we are using BCE as reconstruction loss
         x = torch.sigmoid(self.conv2(x))

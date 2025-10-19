@@ -256,7 +256,7 @@ def codes_to_images(codes, quantizer, vae, device):
     return images.cpu().numpy()
 
 
-def plot_sampling_comparison(vqvae_pixelcnn_imgs, vqvae_imgs, geodesic_pixelcnn_imgs, geodesic_random_imgs, save_path, n_show=8):
+def plot_sampling_comparison(vqvae_pixelcnn_imgs, vqvae_imgs, geodesic_pixelcnn_imgs, geodesic_random_imgs, save_path, n_show=16):
     """
     Plot comparison of different sampling methods.
     
@@ -459,7 +459,7 @@ def compare_sampling_methods(n_samples=16, temperature=1.0):
         geodesic_pixelcnn_samples,
         geodesic_random_samples,
         save_path,
-        n_show=8
+        n_show=16
     )
     
     # Save raw data as torch

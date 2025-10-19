@@ -42,7 +42,7 @@ from typing import Tuple
 #         return mu, logvar
 
 
-class Encoder_MNIST(nn.Module):
+class Encoder_MNIST_VAE(nn.Module):
     def __init__(self, in_channels: int, hidden_channels: int, latent_dim: int) -> None:
         """
         Encoder module that predicts the `mean` and `log(variance)` parameters.

@@ -81,7 +81,7 @@ def codes_to_images(codes, quantizer, vae, device):
     return images.cpu().numpy()
 
 
-def plot_comparison_grid(pixelcnn_imgs, random_imgs, save_path, n_show=8):
+def plot_comparison_grid(pixelcnn_imgs, random_imgs, save_path, n_show=16):
     """
     Plot side-by-side comparison of PixelCNN vs random samples.
     
@@ -211,7 +211,7 @@ def compare_pixelcnn_vs_random(n_samples=16, temperature=1.0):
     save_dir.mkdir(exist_ok=True, parents=True)
     
     save_path = save_dir / "pixelcnn_vs_random.png"
-    plot_comparison_grid(pixelcnn_images, random_images, save_path, n_show=8)
+    plot_comparison_grid(pixelcnn_images, random_images, save_path, n_show=16)
     
     # Save data as torch
     data_path = save_dir / "pixelcnn_vs_random.pt"

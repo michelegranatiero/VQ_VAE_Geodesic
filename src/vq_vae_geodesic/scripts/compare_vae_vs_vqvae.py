@@ -26,7 +26,7 @@ from vq_vae_geodesic.models.modules.vae import build_vae_from_config
 from vq_vae_geodesic.models.modules.vqvae import build_vqvae_from_config
 
 
-def evaluate_vae_geodesic(model, quantizer, data_loader, device, n_samples=8):
+def evaluate_vae_geodesic(model, quantizer, data_loader, device, n_samples=16):
     """Evaluate VAE + Geodesic Quantization."""
     model.eval()
     

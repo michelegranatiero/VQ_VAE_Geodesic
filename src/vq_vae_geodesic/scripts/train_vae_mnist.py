@@ -1,11 +1,8 @@
-"""
-Train VAE on MNIST dataset.
-"""
 import torch
 import wandb
 from vq_vae_geodesic.hyperparameters import get_mnist_config
 from vq_vae_geodesic.utils import set_seed
-
+from functools import partial
 from vq_vae_geodesic.data.loaders import get_MNIST_loaders
 from vq_vae_geodesic.models.modules.vae import build_vae_from_config
 from vq_vae_geodesic.training.losses import vae_loss_bce
@@ -14,14 +11,9 @@ from vq_vae_geodesic.training.train import fit_vae
 
 RESUME = False  # Set to True to resume from checkpoint
 
-
 def launch_train(resume=False):
     config = get_mnist_config()
     set_seed(config.seed)
-
-    # Override parameters here if needed
-    # config.training_params.num_epochs = 50
-    # config.training_params.learning_rate = 1e-3
 
     device = torch.device("cuda:0" if config.use_gpu and torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
@@ -43,13 +35,15 @@ def launch_train(resume=False):
         weight_decay=config.training_params.weight_decay
     )
 
-    # Loss function
-    loss_fn = vae_loss_bce
+    # Loss function con beta fissato tramite functools.partial
+    loss_fn = partial(vae_loss_bce, beta=config.training_params.variational_beta)
 
     # Resume logic
     start_epoch = 1
     train_loss_history = []
+    train_recon_history = []
     val_loss_history = []
+    val_recon_history = []
     checkpoint_path = checkpoint_dir() / "checkpoint_mnist.pt"
 
     if resume and checkpoint_path.exists():
@@ -59,7 +53,9 @@ def launch_train(resume=False):
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         start_epoch = checkpoint['epoch'] + 1
         train_loss_history = checkpoint.get('train_loss_history', [])
+        train_recon_history = checkpoint.get('train_recon_history', [])
         val_loss_history = checkpoint.get('val_loss_history', [])
+        val_recon_history = checkpoint.get('val_recon_history', [])
         print(f"Resumed from epoch {start_epoch}")
     else:
         print("Starting training from scratch")
@@ -77,21 +73,20 @@ def launch_train(resume=False):
         val_loader=val_loader,
         optimizer=optimizer,
         loss_fn=loss_fn,
-        variational_beta=config.training_params.variational_beta,
         num_epochs=config.training_params.num_epochs,
         device=device,
+        checkpoint_path=checkpoint_path,
         start_epoch=start_epoch,
-        checkpoint_path=str(checkpoint_path),
         train_loss_history=train_loss_history,
+        train_recon_history=train_recon_history,
         val_loss_history=val_loss_history,
+        val_recon_history=val_recon_history,
         save_checkpoint_every=config.training_params.save_checkpoint_every
     )
 
     wandb.finish()
 
-    # return train_loss_avg, val_loss_avg
-    print(f"Final Training Loss: {train_loss_avg[-1]:.4f}, Final Validation Loss: {val_loss_avg[-1]:.4f}")
-    print(f"\nModel and training state saved to {checkpoint_path}")
+    print(f"\nModel and training state saved in {checkpoint_dir()}")
     print("\nNext step: Extract latents")
     print("python -m vq_vae_geodesic.scripts.extract_mnist_latents")
 

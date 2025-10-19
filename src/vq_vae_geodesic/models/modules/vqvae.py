@@ -83,10 +83,7 @@ class VectorQuantizer(nn.Module):
         # Straight-through estimator: forward uses quantized, backward uses z
         quantized = z + (quantized - z).detach()
         
-        # Reshape encoding indices for convenience: (B*H*W,) → (B, H, W)
-        encoding_indices = encoding_indices.view(z.shape[0], z.shape[2], z.shape[3])
-        
-        return quantized, loss, encoding_indices
+        return quantized, loss
 
 
 class VQVAE(nn.Module):
@@ -126,24 +123,9 @@ class VQVAE(nn.Module):
             encoding_indices: Discrete codes (B, H, W)
         """
         z = self.encoder(x)
-        quantized, vq_loss, encoding_indices = self.vq(z)
+        quantized, vq_loss = self.vq(z)
         x_recon = self.decoder(quantized)
-        return x_recon, vq_loss, encoding_indices
-    
-    # def encode(self, x):
-    #     """Encode images to discrete codes."""
-    #     z = self.encoder(x)
-    #     _, _, encoding_indices = self.vq(z)
-    #     return encoding_indices
-    
-    # def decode_codes(self, codes):
-    #     """Decode discrete codes to images."""
-    #     # codes: (B, H, W) with values in [0, K-1]
-    #     # Lookup embeddings
-    #     quantized = self.vq.embeddings(codes)  # (B, H, W, D)
-    #     quantized = quantized.permute(0, 3, 1, 2).contiguous()  # (B, D, H, W)
-    #     return self.decoder(quantized)
-
+        return x_recon, vq_loss
 
 def build_vqvae_from_config(arch_params, vqvae_params):
     """

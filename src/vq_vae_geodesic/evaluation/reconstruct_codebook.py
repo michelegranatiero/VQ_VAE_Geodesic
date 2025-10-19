@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from pathlib import Path 
 from tqdm import tqdm
 
-def save_reconstruction_plot(orig_imgs, vae_imgs, geodesic_imgs, out_path, title_orig="Original", title_vae="VAE", title_geodesic="Geodesic"):
+def save_reconstruction_plot(orig_imgs, vae_imgs, geodesic_imgs, out_path, title_orig="Original", title_vae="VAE", title_geodesic="Geodesic", n_show=16):
     """
     Save a reconstruction comparison plot with original, VAE, and geodesic reconstructions.
 
@@ -25,7 +25,6 @@ def save_reconstruction_plot(orig_imgs, vae_imgs, geodesic_imgs, out_path, title
     """
     out_path = Path(out_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    n_show = min(8, orig_imgs.shape[0], vae_imgs.shape[0], geodesic_imgs.shape[0])
     orig = orig_imgs[:n_show]
     vae = vae_imgs[:n_show]
     geodesic = geodesic_imgs[:n_show]
@@ -136,11 +135,12 @@ def evaluate_geodesic_reconstruction(model, data_loader, codebook_chunks: torch.
         bs = image_batch.size(0)
         image_batch = image_batch.to(device)
 
-        # Get codes indices for this batch: (bs, L)
+        # Get codes indices for this batch: (bs, L) , with L = n_chunks
+        # L contains indices into codebook_chunks (e.g. each image is represented by 16 indices)
         batch_codes = codes_per_image[ptr:ptr+bs]
         ptr += bs
 
-        # Get actual codewords (chunks): (bs, L, chunk_size)
+        # Get actual codewords (chunks) from codebook (from indices): (bs, L, chunk_size)
         z_chunks = codebook_chunks[batch_codes]  # indexing
 
         # Reshape to full latent vectors: (bs, D) where D = L * chunk_size
