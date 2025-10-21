@@ -35,7 +35,7 @@ def compare_temperatures(temperatures=[0.5, 0.8, 1.0, 1.2, 1.5], n_samples_per_t
     print(f"Using device: {device}")
     
     # Load models
-    pixelcnn_path = checkpoint_dir() / "pixelcnn_mnist_best.pt"
+    pixelcnn_path = checkpoint_dir() / "pixelcnn_geodesic_mnist_best.pt"
     
     print(f"Loading PixelCNN from {pixelcnn_path}")
     pixelcnn = PixelCNN(

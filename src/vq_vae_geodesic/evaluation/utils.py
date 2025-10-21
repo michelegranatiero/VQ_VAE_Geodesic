@@ -1,0 +1,129 @@
+import torch
+from vq_vae_geodesic.config import checkpoint_dir, latents_dir
+from vq_vae_geodesic.models.modules.vae import build_vae_from_config
+from vq_vae_geodesic.models.modules.vqvae import build_vqvae_from_config
+from vq_vae_geodesic.models.modules.pixelCNN import build_pixelcnn_from_config
+import numpy as np
+
+# ----------------------------------------------
+# ------------ VAE ( + Geodesic) ---------------
+# ----------------------------------------------
+def load_model_vae_mnist(arch_params, device):
+	"""
+	Load VAE model for MNIST from checkpoint.
+	"""
+	checkpoint_path = checkpoint_dir() / "main_checkpoint_mnist.pt"
+	model = build_vae_from_config(arch_params)
+	checkpoint = torch.load(checkpoint_path, map_location=device)
+	model.load_state_dict(checkpoint['model_state_dict'])
+	model = model.to(device)
+	model.eval()
+	return model
+
+def load_latents_mnist(latents_path, map_location='cpu'):
+	"""
+	Load mu and logvar tensors from a .pt file (es. train_latents.pt).
+	Returns: mu, logvar
+	"""
+	if not latents_path.exists():
+		raise FileNotFoundError(
+			f"Latents not found at {latents_path}\n"
+			"Run extraction first"
+		)
+	data = torch.load(latents_path, map_location=map_location)
+	return data['mu'], data['logvar']
+
+def load_codebook_mnist(device):
+	"""
+	Load codebook_chunks tensor for MNIST from file.
+	"""
+	codebook_path = latents_dir() / "chunk_codebook.pt"
+	if not codebook_path.exists():
+		raise FileNotFoundError(
+			f"Codebook not found at {codebook_path}\n"
+			"Run quantization first: python -m vq_vae_geodesic.scripts.quantize_mnist"
+		)
+	codebook_data = torch.load(codebook_path, map_location=device)
+	return codebook_data['codebook_chunks']
+
+def load_codes_indices_mnist():
+	"""
+	Load train, val, test codes (indices) for MNIST from file.
+	"""
+	codes_path = latents_dir() / "assigned_codes.pt"
+	if not codes_path.exists():
+		raise FileNotFoundError(
+			f"Codes not found at {codes_path}\n"
+			"Run quantization first: python -m vq_vae_geodesic.scripts.quantize_mnist"
+		)
+	codes_data = torch.load(codes_path, map_location="cpu")
+	return codes_data['train_codes'], codes_data['val_codes'], codes_data['test_codes']
+
+# Get actual discrete codes from indices
+def lookup_codewords(codebook_chunks: torch.Tensor, batch_codes: torch.Tensor) -> torch.Tensor:
+	"""
+	Given a codebook and a batch of code indices, returns the quantized latent vectors.
+	Args:
+		codebook_chunks: (K, chunk_size) tensor
+		batch_codes: (bs, L) tensor of indices
+	Returns:
+		z_recon: (bs, D) tensor, where D = L * chunk_size
+	"""
+	z_chunks = codebook_chunks[batch_codes]  # indexing
+	z_recon = z_chunks.reshape(z_chunks.size(0), -1)
+	return z_recon
+
+# ----------------------------------------
+# ----------------- VQ-VAE ---------------
+# ----------------------------------------
+def load_model_vqvae_mnist(arch_params, vqvae_params, device):
+	"""
+	Load VQ-VAE model for MNIST from checkpoint.
+	"""
+	checkpoint_path = checkpoint_dir() / "vqvae_mnist_best.pt"
+	model = build_vqvae_from_config(arch_params, vqvae_params)
+	checkpoint = torch.load(checkpoint_path, map_location=device)
+	model.load_state_dict(checkpoint['model_state_dict'])
+	model = model.to(device)
+	model.eval()
+	return model
+
+ #  codes extraction and saving 
+def extract_vqvae_codes(vqvae, data_loader, device):
+	"""
+	Extract discrete codes from a VQ-VAE model for all images in a dataloader.
+	Returns: np.ndarray of codes (N, H, W)
+	"""
+	from tqdm import tqdm
+	vqvae.eval()
+	all_codes = []
+	with torch.no_grad():
+		for x, _ in tqdm(data_loader, desc="Extracting VQ-VAE codes"):
+			x = x.to(device)
+			z_e = vqvae.encoder(x)
+			_, _, codes = vqvae.vq(z_e)
+			all_codes.append(codes.cpu().numpy())
+	all_codes = np.concatenate(all_codes, axis=0)
+	return all_codes
+
+def save_codes(codes, save_dir, prefix):
+	out_path = save_dir / f"{prefix}_codes.pt"
+	if isinstance(codes, np.ndarray):
+		codes = torch.from_numpy(codes)
+	torch.save({'codes': codes}, out_path)
+	print(f"Codes saved to {out_path} (shape: {codes.shape})")
+	return out_path
+
+# ----------------------------------------
+# ------------ PixelCNN -------------------
+# ----------------------------------------
+def load_pixelcnn_checkpoint(checkpoint_name, config, device):
+	path = checkpoint_dir() / checkpoint_name
+	if not path.exists():
+		raise FileNotFoundError(f"PixelCNN checkpoint not found: {path}")
+	model = build_pixelcnn_from_config(config)
+	checkpoint = torch.load(path, map_location=device)
+	model.load_state_dict(checkpoint['model_state_dict'])
+	model = model.to(device)
+	model.eval()
+	return model

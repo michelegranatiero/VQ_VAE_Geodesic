@@ -93,3 +93,19 @@ class EarlyStopping:
                     model.load_state_dict(self.best_model)
                 return True
             return False
+        
+
+class WeightedAverager:
+    def __init__(self):
+        self.total = 0.0
+        self.count = 0.0
+
+    def add(self, value: float, weight: float = 1.0):
+        self.total += float(value) * float(weight)
+        self.count += float(weight)
+
+    def mean(self) -> float:
+        return self.total / self.count if self.count > 0 else float("nan")
+    
+def add_prefix_to_dict(d, prefix):
+    return {f"{prefix}{k}": v for k, v in d.items()}

@@ -144,7 +144,7 @@ def compare_pixelcnn_vs_random(n_samples=16, temperature=1.0):
     print("\nLoading models...")
     
     # PixelCNN
-    pixelcnn_path = checkpoint_dir() / "pixelcnn_mnist_best.pt"
+    pixelcnn_path = checkpoint_dir() / "pixelcnn_geodesic_mnist_best.pt"
     
     pixelcnn = PixelCNN(
         num_tokens=num_tokens,

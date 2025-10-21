@@ -71,7 +71,10 @@ class VectorQuantizer(nn.Module):
         # Reshape back: (B*H*W, D) → (B, H, W, D) → (B, D, H, W)
         quantized = quantized.view(z.shape[0], z.shape[2], z.shape[3], self.embedding_dim)
         quantized = quantized.permute(0, 3, 1, 2).contiguous()
-        
+
+        # Reshape encoding_indices to (B, H, W)
+        encoding_indices = encoding_indices.view(z.shape[0], z.shape[2], z.shape[3])
+
         # VQ Loss
         # e_latent_loss: push encoder outputs toward chosen embeddings
         e_latent_loss = F.mse_loss(quantized.detach(), z)
@@ -82,8 +85,8 @@ class VectorQuantizer(nn.Module):
         
         # Straight-through estimator: forward uses quantized, backward uses z
         quantized = z + (quantized - z).detach()
-        
-        return quantized, loss
+
+        return quantized, loss, encoding_indices
 
 
 class VQVAE(nn.Module):
@@ -120,12 +123,11 @@ class VQVAE(nn.Module):
         Returns:
             x_recon: Reconstructed images (B, C, H, W)
             vq_loss: Vector quantization loss
-            encoding_indices: Discrete codes (B, H, W)
         """
         z = self.encoder(x)
-        quantized, vq_loss = self.vq(z)
+        quantized, vq_loss, encoding_indices = self.vq(z)
         x_recon = self.decoder(quantized)
-        return x_recon, vq_loss
+        return x_recon, vq_loss, 
 
 def build_vqvae_from_config(arch_params, vqvae_params):
     """

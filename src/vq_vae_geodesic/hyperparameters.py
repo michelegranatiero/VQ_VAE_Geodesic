@@ -138,7 +138,7 @@ def get_mnist_config() -> ExperimentConfig:
         training_params=TrainingParams(num_epochs=50, batch_size=128, variational_beta=1.0),
         quant_params=GeodesicQuantizationParams(n_chunks=16, n_codewords=512, grid_h=4, grid_w=4),   # latent_dim / n_chunks = chunk_size -> 128 / 16 = 8 -> grid 4x4=16  
         vqvae_params=VQVAEParams(num_embeddings=512, embedding_dim=64, commitment_cost=0.25),
-        pixelcnn_params=PixelCNNParams(embed_dim=64, hidden_channels=128, n_layers=7),
+        pixelcnn_params=PixelCNNParams(num_epochs=50, embed_dim=64, hidden_channels=128, n_layers=7),
         data_params=DataParams(dataset="mnist", batch_size=128)
     )
 

@@ -10,11 +10,10 @@ from vq_vae_geodesic.training.train import fit_vqvae
 
 RESUME = False  # Set to True to resume from checkpoint
 
+"""Train VQ-VAE with end-to-end learned codebook on MNIST."""
 def launch_train_vqvae(resume=False):
-    """Train VQ-VAE with end-to-end learned codebook on MNIST."""
     config = get_mnist_config()
     set_seed(config.seed)
-    
     device = torch.device("cuda:0" if config.use_gpu and torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
     
@@ -88,7 +87,7 @@ def launch_train_vqvae(resume=False):
     
     print(f"\nModel and training state saved in {checkpoint_dir()}")
     print("\nNext steps:")
-    print("1. Evaluate: python -m vq_vae_geodesic.scripts.evaluate_vqvae_mnist")
+    print("1. Evaluate: uv run -m src.vq_vae_geodesic.scripts.evaluate_vqvae_mnist")
     print("2. Train PixelCNN on VQ-VAE codes")
     print("3. Compare with geodesic quantization approach")
 

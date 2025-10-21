@@ -66,7 +66,7 @@ def launch_sample_pixelcnn(n_samples=16, temperature=1.0, save_images=True):
     print(f"Using device: {device}")
     
     # Load PixelCNN
-    pixelcnn_path = checkpoint_dir() / "pixelcnn_mnist_best.pt"
+    pixelcnn_path = checkpoint_dir() / "pixelcnn_geodesic_mnist_best.pt"
     
     if not pixelcnn_path.exists():
         raise FileNotFoundError(

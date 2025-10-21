@@ -14,7 +14,6 @@ RESUME = False  # Set to True to resume from checkpoint
 def launch_train(resume=False):
     config = get_mnist_config()
     set_seed(config.seed)
-
     device = torch.device("cuda:0" if config.use_gpu and torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
@@ -88,7 +87,7 @@ def launch_train(resume=False):
 
     print(f"\nModel and training state saved in {checkpoint_dir()}")
     print("\nNext step: Extract latents")
-    print("python -m vq_vae_geodesic.scripts.extract_mnist_latents")
+    print("uv run -m src.vq_vae_geodesic.scripts.extract_mnist_latents")
 
 
 if __name__ == "__main__":
