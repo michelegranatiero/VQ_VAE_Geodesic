@@ -9,5 +9,5 @@ wheels/
 # Virtual environments
 .venv
 .github
-data/raw/
+data/raw/*
 wandb/

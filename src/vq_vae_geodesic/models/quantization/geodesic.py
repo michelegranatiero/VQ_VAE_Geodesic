@@ -9,7 +9,7 @@ import torch
 from scipy.sparse.csgraph import shortest_path
 from kmedoids import KMedoids
 
-from .utils import build_knn_graph_w2, build_knn_graph_w2_full, subsample_indices, w2_squared_distance
+from .utils import build_knn_graph_w2, subsample_indices, w2_squared_distance
 
 
 class GeodesicQuantizer:
@@ -32,9 +32,6 @@ class GeodesicQuantizer:
             chunk_size: Dimensionality of each chunk (auto-computed if None), ITS ALSO THE CODEWORD SIZE
             k: Number of neighbors for k-NN graph
             random_state: Random seed for reproducibility
-
-        Note: If n_chunks and chunk_size are not provided, they will be computed
-        automatically during fit() based on the latent dimension.
         """
         self.n_chunks = n_chunks
         self.chunk_size = chunk_size
@@ -74,37 +71,18 @@ class GeodesicQuantizer:
         Flatten chunks into a single array of points for clustering.
 
         Transforms (N, n_chunks, chunk_size) -> (N*n_chunks, chunk_size)
-        so we can treat each chunk independently.
         """
         points = mus_chunks.view(-1, self.chunk_size)
         logvars_pts = logvar_chunks.view(-1, self.chunk_size)
         return points, logvars_pts
 
-    def build_features(self, points, sigmas):
-        """
-        Build feature vectors for clustering.
-        """
-        # Concatenate mean and std for richer representation
-        features = torch.cat([points, sigmas], dim=1)
-        return features
-
-
     def fit(self, mu, logvar):
         """
         Fit the geodesic quantizer to training latents.
 
-        Pipeline:
-        1. Chunk latents into smaller vectors
-        2. Subsample for computational efficiency
-        3. Build k-NN graph connecting nearby chunks
-        4. Compute geodesic distances (shortest paths on graph)
-        5. Embed in lower-dim space via MDS to preserve geodesic structure
-        6. Cluster with K-means in MDS space
-        7. Select medoids (actual data points) as codebook entries
-
         Args:
             mu: Latent means (N, D)
-            logvar: Latent log-variances (N, D), optional
+            logvar: Latent log-variances (N, D)
 
         Returns:
             self: Fitted quantizer with codebook
@@ -112,8 +90,7 @@ class GeodesicQuantizer:
         # Auto-compute chunk_size
         latent_dim = mu.shape[1]
         self.chunk_size = latent_dim // self.n_chunks
-        print(
-                f"Auto-computed: n_chunks={self.n_chunks}, chunk_size={self.chunk_size} (latent_dim={latent_dim})")
+        print(f"Auto-computed: n_chunks={self.n_chunks}, chunk_size={self.chunk_size} (latent_dim={latent_dim})")
 
         # Step 1: Split into chunks
         mus_chunks, logvar_chunks = self.chunk_latents(mu, logvar)
@@ -129,8 +106,7 @@ class GeodesicQuantizer:
 
         # Step 3: Build k-NN graph (captures local manifold structure)
         print("Building k-NN graph with W-2 distances (no normalization)...")
-        # A = build_knn_graph_w2(points_sub, sigmas_sub, k=self.k)
-        A = build_knn_graph_w2_full(points_sub, sigmas_sub, k=self.k)
+        A = build_knn_graph_w2(points_sub, sigmas_sub, k=self.k)
 
         # Step 4: Compute geodesic distances via shortest paths
         print("Computing shortest paths for geodesic distances...")
@@ -152,7 +128,7 @@ class GeodesicQuantizer:
 
     def assign(self, mu, logvar, batch_size=10000):
         """
-        Assign each latent vector to nearest codebook entries using direct Wasserstein-2 distance.
+        Assign each latent vector to nearest codebook entries using direct Wasserstein-2 (squared) distance.
 
         Args:
             mu: Latent means to quantize (N, D)

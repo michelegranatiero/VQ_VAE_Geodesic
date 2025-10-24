@@ -45,7 +45,7 @@ from typing import Tuple
 class Encoder_MNIST_VAE(nn.Module):
     def __init__(self, in_channels: int, hidden_channels: int, latent_dim: int) -> None:
         """
-        Encoder module that predicts the `mean` and `log(variance)` parameters.
+        Encoder module that predicts the mean and log(variance) parameters.
         """
         super().__init__()
         self.conv1 = nn.Conv2d(in_channels=in_channels,
@@ -86,10 +86,6 @@ class Encoder_MNIST_VAE(nn.Module):
 class Encoder_MNIST_VQVAE(nn.Module):
     """
     Encoder for VQ-VAE that outputs spatial feature maps instead of flat vectors.
-    
-    Architecture matches VAE encoder but outputs spatial maps instead of flat vectors:
-    - VAE: conv1 → conv2 → flatten → fc_mu, fc_logvar
-    - VQ-VAE: conv1 → conv2 → conv3 (spatial projection to embedding_dim)
     
     Output: (B, embedding_dim, H, W) where H=7, W=7 for MNIST 28x28 input
     """

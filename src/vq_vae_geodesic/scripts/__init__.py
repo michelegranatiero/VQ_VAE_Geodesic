@@ -15,23 +15,24 @@ VQ-VAE training on MNIST:
 Evaluate reconstructions and metrics for VAE, VAE + Geodesic, and VQ-VAE on MNIST:
     uv run -m src.vq_vae_geodesic.scripts.evaluate_recon_mnist
 
+Interpolation comparison between VAE + Geodesic and VQ-VAE:
+    uv run -m src.vq_vae_geodesic.scripts.interpolate_latent_codes
+    
 VAE + Geodesic Quantization + PixelCNN Prior on MNIST (training):
-    uv run -m src.vq_vae_geodesic.scripts.train_pixelcnn_mnist
-    uv run -m src.vq_vae_geodesic.scripts.sample_pixelcnn_mnist ----------
+    uv run -m src.vq_vae_geodesic.scripts.train_pixelcnn_geodesic_mnist
 
-    uv run -m src.vq_vae_geodesic.scripts.compare_pixelcnn_vs_random ----------
-    uv run -m src.vq_vae_geodesic.scripts.compare_temperatures ----------
+    uv run -m src.vq_vae_geodesic.scripts.sample_geodesic_pixelcnn_mnist
+    uv run -m src.vq_vae_geodesic.scripts.compare_geodesic_sampling
+    uv run -m src.vq_vae_geodesic.scripts.compare_geodesic_temperatures
 
 VQ-VAE + PixelCNN Prior on MNIST (training):
     uv run -m src.vq_vae_geodesic.scripts.train_pixelcnn_vqvae_mnist
 
+    uv run -m src.vq_vae_geodesic.scripts.compare_vqvae_sampling
+
+
 Evaluate pixelCNN for VAE + Geodesic and VQ-VAE on MNIST:
     uv run -m src.vq_vae_geodesic.scripts.evaluate_pixelcnn_mnist
-
-Comparison
-    uv run -m src.vq_vae_geodesic.scripts.compare_sampling_methods ----------
-
-    uv run -m src.vq_vae_geodesic.scripts.print_final_results ----------
 
 
 """

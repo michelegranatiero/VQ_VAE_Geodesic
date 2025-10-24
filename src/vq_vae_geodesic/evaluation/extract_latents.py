@@ -14,12 +14,11 @@ def extract_latents(model, dataloader, device):
     logvars = torch.cat(logvars, dim=0)
     return mus, logvars
 
-def save_latents(mus, logvars, save_dir, prefix):
-    out_path = save_dir / f"{prefix}_latents.pt"
-    torch.save({'mu': mus, 'logvar': logvars}, out_path)
-    print(f"Latent representations saved to {out_path} (mu shape: {mus.shape}, logvar shape: {logvars.shape})")
-    return out_path
+def save_latents(mus, logvars, save_path):
+    torch.save({'mu': mus, 'logvar': logvars}, save_path)
+    print(f"Latent representations saved to {save_path} (mu shape: {mus.shape}, logvar shape: {logvars.shape})")
+    return save_path
 
-def extract_and_save_latents(model, dataloader, device, save_dir, prefix):
+def extract_and_save_latents(model, dataloader, device, save_path):
     mus, logvars = extract_latents(model, dataloader, device)
-    return save_latents(mus, logvars, save_dir, prefix)
+    return save_latents(mus, logvars, save_path)

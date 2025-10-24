@@ -1,14 +1,8 @@
 """
 Utility functions for geodesic quantization.
-
-Contains helper functions for:
-- Subsampling large datasets
-- Building k-NN graphs for manifold structure (now uses PyTorch for W2)
-- Computing medoids for cluster centers
 """
 import torch
 import numpy as np
-from sklearn.neighbors import NearestNeighbors
 from scipy.sparse import csr_matrix
 
 def w2_squared_distance(mu1, sigma1, mu2, sigma2):
@@ -38,55 +32,7 @@ def subsample_indices(N, max_pts=5000, seed=42):
     return torch.from_numpy(idx).long()
 
 
-def build_knn_graph_w2(points: torch.Tensor, sigmas: torch.Tensor, k=20):
-    """
-    Build k-NN graph where edge weight = W2 distance between diagonal Gaussians.
-    Args:
-        points: (N, d) torch.Tensor (means)
-        sigmas: (N, d) torch.Tensor (stddevs)
-        k: number of neighbors
-    Returns:
-        A: scipy.sparse adjacency matrix (N, N) with W2 distances
-    """
-    N, d = points.shape
-
-    # Use sklearn NearestNeighbors to get kNN indices (on CPU, fast enough)
-    # Get indices of k nearest neighbors for each point using Euclidean distance (only on means)
-    points_np = points.detach().cpu().numpy()
-    nn = NearestNeighbors(n_neighbors=k, algorithm='auto').fit(points_np)
-    _, indices = nn.kneighbors(points_np)  # (N, k)
-
-    # Prepare for vectorized computation
-    device = points.device
-    indices_torch = torch.from_numpy(indices).to(device)  # (N, k)
-
-    # Gather neighbor points/sigmas for each point
-    points_neighbors = points[indices_torch]  # (N, k, d)
-    sigmas_neighbors = sigmas[indices_torch]  # (N, k, d)
-
-    # Expand points/sigmas for broadcasting
-    points_exp = points.unsqueeze(1)  # (N, 1, d)
-    sigmas_exp = sigmas.unsqueeze(1)  # (N, 1, d)
-
-    # Usa la funzione w2_squared_distance
-    w = w2_squared_distance(points_exp, sigmas_exp, points_neighbors, sigmas_neighbors)  # (N, k)
-
-    # Prepare rows, cols, data for sparse matrix
-    rows = np.repeat(np.arange(N), k)
-    cols = indices.flatten()
-    data = w.detach().cpu().numpy().flatten()
-
-    # symmetrize
-    rows2 = np.concatenate([rows, cols])
-    cols2 = np.concatenate([cols, rows])
-    data2 = np.concatenate([data, data])
-    A = csr_matrix((data2, (rows2, cols2)), shape=(N, N))
-    return A
-
-
-
-
-def build_knn_graph_w2_full(points: torch.Tensor, sigmas: torch.Tensor, k=20, batch_size=500):
+def build_knn_graph_w2(points: torch.Tensor, sigmas: torch.Tensor, k=20, batch_size=500):
     """
     Build k-NN graph where both neighbor search and edge weights use W2 distance between diagonal Gaussians.
     Uses batching to reduce memory usage.

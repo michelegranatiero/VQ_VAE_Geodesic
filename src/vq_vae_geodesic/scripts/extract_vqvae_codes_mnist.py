@@ -1,6 +1,5 @@
 """
 Extract discrete codes from a trained VQ-VAE on MNIST and save to latents directory.
-Saves files: vqvae_train_codes.pt, vqvae_val_codes.pt, vqvae_test_codes.pt (keys: 'codes')
 """
 import torch
 from vq_vae_geodesic.config import latents_dir

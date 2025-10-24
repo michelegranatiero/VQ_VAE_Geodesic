@@ -28,15 +28,19 @@ def launch_extraction():
 
     # Extract and save latents
     save_dir = latents_dir()
+    save_dir.mkdir(exist_ok=True, parents=True)
 
     print("Extracting train latents...")
-    extract_and_save_latents(model, train_loader, device, save_dir, "train")
+    train_path = save_dir / "train_latents.pt"
+    extract_and_save_latents(model, train_loader, device, train_path)
 
     print("Extracting validation latents...")
-    extract_and_save_latents(model, val_loader, device, save_dir, "val")
+    val_path = save_dir / "val_latents.pt"
+    extract_and_save_latents(model, val_loader, device, val_path)
 
     print("Extracting test latents...")
-    extract_and_save_latents(model, test_loader, device, save_dir, "test")
+    test_path = save_dir / "test_latents.pt"
+    extract_and_save_latents(model, test_loader, device, test_path)
 
     print(f"\nLatents saved to {save_dir}")
     print("\nNext step: Run geodesic quantization")

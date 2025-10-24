@@ -11,6 +11,7 @@ from vq_vae_geodesic.training.train import fit_vae
 
 RESUME = False  # Set to True to resume from checkpoint
 
+"""Train VAE on MNIST dataset."""
 def launch_train(resume=False):
     config = get_mnist_config()
     set_seed(config.seed)

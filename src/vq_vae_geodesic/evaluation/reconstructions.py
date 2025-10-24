@@ -52,9 +52,9 @@ def get_vqvae_reconstructions(model, data_loader, device, n_show=8):
 
 
 
-def plot_reconstructions_comparison(orig_imgs, vae_recon, geodesic_recon, vqvae_recon, n_show=8, out_path='reconstructions_comparison.png'):
+def plot_reconstructions_comparison(orig_imgs, vae_recon, geodesic_recon, vqvae_recon, save_path, n_show=8):
     """
-    Crea e salva un plot di confronto tra originali e ricostruzioni dei tre modelli.
+    Create and save a comparison plot of original images and reconstructions from three models.
     """
     fig, axs = plt.subplots(4, n_show, figsize=(2*n_show, 8))
     for i in range(n_show):
@@ -83,6 +83,6 @@ def plot_reconstructions_comparison(orig_imgs, vae_recon, geodesic_recon, vqvae_
         if i == 0:
             ax.set_title('VQ-VAE')
     plt.tight_layout()
-    plt.savefig(out_path)
+    plt.savefig(save_path)
     plt.close(fig)
-    print(f"Confronto ricostruzioni salvato in {out_path}")
+    print(f"Reconstruction comparison saved to {save_path}")

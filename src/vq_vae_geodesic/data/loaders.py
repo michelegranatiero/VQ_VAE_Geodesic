@@ -1,5 +1,5 @@
 """
-Data loaders for MNIST and CIFAR-10 datasets, and discrete latent codes.
+Data loaders
 """
 import numpy as np
 import torch

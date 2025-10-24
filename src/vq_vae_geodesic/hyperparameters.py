@@ -1,5 +1,5 @@
 """
-Hyperparameters and model configuration using dataclasses.
+Hyperparameters and model configuration.
 """
 from dataclasses import dataclass, field
 from typing import Dict

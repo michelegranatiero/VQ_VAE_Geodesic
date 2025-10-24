@@ -75,8 +75,6 @@ def launch_quantization():
     }, all_codes_path)
 
     print(f"Codes saved to {latents_dir()}")
-    print("\nNext step: Evaluate reconstructions")
-    print("uv run -m src.vq_vae_geodesic.scripts.evaluate_recon_mnist")
 
 
 if __name__ == "__main__":

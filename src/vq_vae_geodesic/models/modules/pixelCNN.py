@@ -1,9 +1,8 @@
 """
 PixelCNN model for learning autoregressive prior over discrete latent codes.
 
-Implements a PixelCNN with masked convolutions to model the joint distribution
-of latent codes p(z) in an autoregressive manner. After training on quantized
-latent codes from a VAE/VQ-VAE, it can generate new valid latent configurations
+Implements a PixelCNN with masked convolutions. After training on quantized
+latent codes from a VAE/VQ-VAE, it can generate new valid latents codes (indices)
 through ancestral sampling.
 
 Reference: van den Oord et al., "Pixel Recurrent Neural Networks", 2016

@@ -86,11 +86,6 @@ def launch_train_vqvae(resume=False):
     wandb.finish()
     
     print(f"\nModel and training state saved in {checkpoint_dir()}")
-    print("\nNext steps:")
-    print("1. Evaluate: uv run -m src.vq_vae_geodesic.scripts.evaluate_vqvae_mnist")
-    print("2. Train PixelCNN on VQ-VAE codes")
-    print("3. Compare with geodesic quantization approach")
-
 
 if __name__ == "__main__":
     launch_train_vqvae(resume=RESUME)

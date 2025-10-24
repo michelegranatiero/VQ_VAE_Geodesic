@@ -106,13 +106,12 @@ def extract_vqvae_codes(vqvae, data_loader, device):
 	all_codes = np.concatenate(all_codes, axis=0)
 	return all_codes
 
-def save_codes(codes, save_dir, prefix):
-	out_path = save_dir / f"{prefix}_codes.pt"
+def save_codes(codes, save_path):
 	if isinstance(codes, np.ndarray):
 		codes = torch.from_numpy(codes)
-	torch.save({'codes': codes}, out_path)
-	print(f"Codes saved to {out_path} (shape: {codes.shape})")
-	return out_path
+	torch.save({'codes': codes}, save_path)
+	print(f"Codes saved to {save_path} (shape: {codes.shape})")
+	return save_path
 
 # ----------------------------------------
 # ------------ PixelCNN -------------------
@@ -127,3 +126,62 @@ def load_pixelcnn_checkpoint(checkpoint_name, config, device):
 	model = model.to(device)
 	model.eval()
 	return model
+
+def codes_to_images_via_codebook(codes, codebook_chunks, decoder, device):
+	"""
+	Convert discrete codes to images via codebook lookup and VAE decoder.
+	
+	Args:
+		codes: Discrete codes (B, H, W) as numpy array or torch tensor
+		codebook_chunks: Codebook tensor (K, chunk_size)
+		decoder: VAE decoder model
+		device: Device for computation
+		
+	Returns:
+		images: Generated images as numpy array (B, C, H, W)
+	"""
+	if isinstance(codes, np.ndarray):
+		batch_size = codes.shape[0]
+		codes_flat = torch.from_numpy(codes.reshape(batch_size, -1)).long().to(device)
+	else:
+		batch_size = codes.shape[0]
+		codes_flat = codes.reshape(batch_size, -1).long().to(device)
+	
+	# Use lookup_codewords to convert indices to latents
+	latents = lookup_codewords(codebook_chunks, codes_flat)
+	
+	# Decode to images
+	decoder.eval()
+	with torch.no_grad():
+		images = decoder(latents)
+	
+	return images.cpu().numpy()
+
+def codes_to_images_via_vqvae(codes, vqvae, device):
+	"""
+	Convert discrete codes to images via VQ-VAE embeddings and decoder.
+	
+	Args:
+		codes: Discrete codes (B, H, W) as numpy array or torch tensor
+		vqvae: VQ-VAE model with vq.embeddings and decoder
+		device: Device for computation
+		
+	Returns:
+		images: Generated images as numpy array (B, C, H, W)
+	"""
+	if isinstance(codes, np.ndarray):
+		codes_t = torch.from_numpy(codes).long().to(device)
+	else:
+		codes_t = codes.long().to(device)
+	
+	# Map codes to embeddings
+	embeddings = vqvae.vq.embeddings.weight
+	quantized_latents = embeddings[codes_t]  # (B, H, W, embed_dim)
+	quantized_latents = quantized_latents.permute(0, 3, 1, 2).contiguous()  # (B, embed_dim, H, W)
+	
+	# Decode
+	vqvae.eval()
+	with torch.no_grad():
+		images = vqvae.decoder(quantized_latents)
+	
+	return images.cpu().numpy()

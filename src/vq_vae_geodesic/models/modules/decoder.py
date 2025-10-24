@@ -75,10 +75,6 @@ class Decoder_MNIST_VQVAE(nn.Module):
     """
     Decoder for VQ-VAE that takes spatial feature maps as input.
     
-    Architecture matches VAE decoder but takes spatial input instead of flat vector:
-    - VAE: fc → unflatten → conv2 → conv1
-    - VQ-VAE: conv0 (project from embedding_dim) → conv2 → conv1
-    
     Input: (B, embedding_dim, H, W) where H=7, W=7
     Output: (B, out_channels, 28, 28) reconstructed image
     """

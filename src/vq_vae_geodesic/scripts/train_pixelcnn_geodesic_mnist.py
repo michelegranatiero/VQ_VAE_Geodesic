@@ -9,7 +9,7 @@ from vq_vae_geodesic.training.train import fit_pixelcnn
 
 RESUME = False  # Set to True to resume from checkpoint
 
-"""Train PixelCNN autoregressive prior on quantized MNIST codes."""
+"""Train PixelCNN autoregressive prior on VAE + Geodesic quantized MNIST codes."""
 def launch_train_pixelcnn(resume=False):
     config = get_mnist_config()
     set_seed(config.seed)
@@ -88,10 +88,6 @@ def launch_train_pixelcnn(resume=False):
     print(f"\nFinal model saved in {checkpoint_dir()}")
     print(f"Final Training Loss: {train_loss_avg[-1]:.4f}")
     print(f"Final Validation Loss: {val_loss_avg[-1]:.4f}")
-    
-    print("\nNext steps:")
-    print("  1. Sample new codes: python -m vq_vae_geodesic.scripts.sample_pixelcnn_mnist")
-    print("  2. Generate images from codes using VAE decoder")
 
 
 if __name__ == "__main__":
