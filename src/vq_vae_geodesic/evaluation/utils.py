@@ -12,7 +12,7 @@ def load_model_vae_mnist(arch_params, device):
 	"""
 	Load VAE model for MNIST from checkpoint.
 	"""
-	checkpoint_path = checkpoint_dir() / "main_checkpoint_mnist.pt"
+	checkpoint_path = checkpoint_dir('mnist') / "main_checkpoint_mnist.pt"
 	model = build_vae_from_config(arch_params)
 	checkpoint = torch.load(checkpoint_path, map_location=device)
 	model.load_state_dict(checkpoint['model_state_dict'])
@@ -37,7 +37,7 @@ def load_codebook_mnist(device):
 	"""
 	Load codebook_chunks tensor for MNIST from file.
 	"""
-	codebook_path = latents_dir() / "chunk_codebook.pt"
+	codebook_path = latents_dir('mnist') / "chunk_codebook.pt"
 	if not codebook_path.exists():
 		raise FileNotFoundError(
 			f"Codebook not found at {codebook_path}\n"
@@ -50,7 +50,7 @@ def load_codes_indices_mnist():
 	"""
 	Load train, val, test codes (indices) for MNIST from file.
 	"""
-	codes_path = latents_dir() / "assigned_codes.pt"
+	codes_path = latents_dir('mnist') / "assigned_codes.pt"
 	if not codes_path.exists():
 		raise FileNotFoundError(
 			f"Codes not found at {codes_path}\n"
@@ -80,7 +80,7 @@ def load_model_vqvae_mnist(arch_params, vqvae_params, device):
 	"""
 	Load VQ-VAE model for MNIST from checkpoint.
 	"""
-	checkpoint_path = checkpoint_dir() / "vqvae_mnist_best.pt"
+	checkpoint_path = checkpoint_dir('mnist') / "vqvae_mnist_best.pt"
 	model = build_vqvae_from_config(arch_params, vqvae_params)
 	checkpoint = torch.load(checkpoint_path, map_location=device)
 	model.load_state_dict(checkpoint['model_state_dict'])
@@ -117,7 +117,9 @@ def save_codes(codes, save_path):
 # ------------ PixelCNN -------------------
 # ----------------------------------------
 def load_pixelcnn_checkpoint(checkpoint_name, config, device):
-	path = checkpoint_dir() / checkpoint_name
+	# Determine dataset from config
+	dataset = 'cifar10' if 'cifar' in checkpoint_name.lower() else 'mnist'
+	path = checkpoint_dir(dataset) / checkpoint_name
 	if not path.exists():
 		raise FileNotFoundError(f"PixelCNN checkpoint not found: {path}")
 	model = build_pixelcnn_from_config(config)
@@ -185,3 +187,71 @@ def codes_to_images_via_vqvae(codes, vqvae, device):
 		images = vqvae.decoder(quantized_latents)
 	
 	return images.cpu().numpy()
+
+
+# ----------------------------------------------
+# ------------ CIFAR-10 Functions --------------
+# ----------------------------------------------
+
+def load_model_vae_cifar10(arch_params, device):
+	"""
+	Load VAE model for CIFAR-10 from checkpoint.
+	"""
+	checkpoint_path = checkpoint_dir('cifar10') / "vae_cifar10_best.pt"
+	model = build_vae_from_config(arch_params, dataset="cifar")
+	checkpoint = torch.load(checkpoint_path, map_location=device)
+	model.load_state_dict(checkpoint['model_state_dict'])
+	model = model.to(device)
+	model.eval()
+	return model
+
+def load_latents_cifar10(latents_path, map_location='cpu'):
+	"""
+	Load mu and logvar tensors from a .pt file (e.g. train_latents_cifar10.pt).
+	Returns: mu, logvar
+	"""
+	if not latents_path.exists():
+		raise FileNotFoundError(
+			f"Latents not found at {latents_path}\n"
+			"Run extraction first"
+		)
+	data = torch.load(latents_path, map_location=map_location)
+	return data['mu'], data['logvar']
+
+def load_codebook_cifar10(device):
+	"""
+	Load codebook_chunks tensor for CIFAR-10 from file.
+	"""
+	codebook_path = latents_dir('cifar10') / "chunk_codebook_cifar10.pt"
+	if not codebook_path.exists():
+		raise FileNotFoundError(
+			f"Codebook not found at {codebook_path}\n"
+			"Run quantization first: python -m vq_vae_geodesic.scripts.quantize_cifar10"
+		)
+	codebook_data = torch.load(codebook_path, map_location=device)
+	return codebook_data['codebook_chunks']
+
+def load_codes_indices_cifar10():
+	"""
+	Load train, val, test codes (indices) for CIFAR-10 from file.
+	"""
+	codes_path = latents_dir('cifar10') / "assigned_codes_cifar10.pt"
+	if not codes_path.exists():
+		raise FileNotFoundError(
+			f"Codes not found at {codes_path}\n"
+			"Run quantization first: python -m vq_vae_geodesic.scripts.quantize_cifar10"
+		)
+	codes_data = torch.load(codes_path, map_location="cpu")
+	return codes_data['train_codes'], codes_data['val_codes'], codes_data['test_codes']
+
+def load_model_vqvae_cifar10(arch_params, vqvae_params, device):
+	"""
+	Load VQ-VAE model for CIFAR-10 from checkpoint.
+	"""
+	checkpoint_path = checkpoint_dir('cifar10') / "vqvae_cifar10_best.pt"
+	model = build_vqvae_from_config(arch_params, vqvae_params, dataset="cifar")
+	checkpoint = torch.load(checkpoint_path, map_location=device)
+	model.load_state_dict(checkpoint['model_state_dict'])
+	model = model.to(device)
+	model.eval()
+	return model

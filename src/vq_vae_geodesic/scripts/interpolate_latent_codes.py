@@ -11,7 +11,7 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 
-from vq_vae_geodesic.config import data_dir
+from vq_vae_geodesic.config import data_dir, samples_dir
 from vq_vae_geodesic.hyperparameters import get_mnist_config
 from vq_vae_geodesic.utils import set_seed
 from vq_vae_geodesic.data.loaders import get_MNIST_loaders
@@ -204,7 +204,7 @@ def run_interpolation():
     plt.tight_layout()
     
     # Save
-    save_dir = data_dir() / "samples"
+    save_dir = samples_dir("mnist")
     save_dir.mkdir(exist_ok=True, parents=True)
     
     plot_path = save_dir / "interpolation_data.png"

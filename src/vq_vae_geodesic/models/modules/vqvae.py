@@ -7,8 +7,14 @@ This serves as a baseline comparison against the geodesic quantization approach.
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from vq_vae_geodesic.models.modules.encoder import Encoder_MNIST_VQVAE
-from vq_vae_geodesic.models.modules.decoder import Decoder_MNIST_VQVAE
+from vq_vae_geodesic.models.modules.encoder import (
+    Encoder_MNIST_VQVAE,
+    Encoder_CIFAR_VQVAE
+)
+from vq_vae_geodesic.models.modules.decoder import (
+    Decoder_MNIST_VQVAE,
+    Decoder_CIFAR_VQVAE
+)
 
 
 class VectorQuantizer(nn.Module):
@@ -77,9 +83,9 @@ class VectorQuantizer(nn.Module):
 
         # VQ Loss
         # e_latent_loss: push encoder outputs toward chosen embeddings
-        e_latent_loss = F.mse_loss(quantized.detach(), z)
+        e_latent_loss = F.mse_loss(quantized.detach(), z, reduction='sum') / z.size(0)
         # q_latent_loss: move embeddings toward encoder outputs
-        q_latent_loss = F.mse_loss(quantized, z.detach())
+        q_latent_loss = F.mse_loss(quantized, z.detach(), reduction='sum') / z.size(0)
         
         loss = q_latent_loss + self.commitment_cost * e_latent_loss
         
@@ -123,35 +129,52 @@ class VQVAE(nn.Module):
         Returns:
             x_recon: Reconstructed images (B, C, H, W)
             vq_loss: Vector quantization loss
+            encoding_indices: Discrete codes (B, H, W)
         """
         z = self.encoder(x)
         quantized, vq_loss, encoding_indices = self.vq(z)
         x_recon = self.decoder(quantized)
-        return x_recon, vq_loss, 
+        return x_recon, vq_loss, encoding_indices 
 
-def build_vqvae_from_config(arch_params, vqvae_params):
+def build_vqvae_from_config(arch_params, vqvae_params, dataset="mnist"):
     """
     Build VQ-VAE model from configuration.
     
     Args:
         arch_params: VAEArchParams with encoder/decoder config
         vqvae_params: VQVAEParams with VQ-specific config
+        dataset: "mnist" or "cifar" to select appropriate architecture
         
     Returns:
         VQVAE model
     """
     
-    # Use VQ-VAE specific encoder/decoder (spatial outputs, not flat vectors)
-    encoder = Encoder_MNIST_VQVAE(
-        arch_params.in_channels,
-        arch_params.hidden_channels,
-        vqvae_params.embedding_dim  # Output channels for spatial map
-    )
-    decoder = Decoder_MNIST_VQVAE(
-        arch_params.out_channels,
-        arch_params.hidden_channels,
-        vqvae_params.embedding_dim  # Input channels from quantized map
-    )
+    if dataset == "mnist":
+        encoder = Encoder_MNIST_VQVAE(
+            arch_params.in_channels,
+            arch_params.hidden_channels,
+            vqvae_params.embedding_dim
+        )
+        decoder = Decoder_MNIST_VQVAE(
+            arch_params.out_channels,
+            arch_params.hidden_channels,
+            vqvae_params.embedding_dim
+        )
+    elif dataset == "cifar":
+        encoder = Encoder_CIFAR_VQVAE(
+            arch_params.in_channels,
+            arch_params.hidden_channels,
+            vqvae_params.embedding_dim,
+            num_residual_layers=2
+        )
+        decoder = Decoder_CIFAR_VQVAE(
+            arch_params.out_channels,
+            arch_params.hidden_channels,
+            vqvae_params.embedding_dim,
+            num_residual_layers=2
+        )
+    else:
+        raise ValueError(f"Unknown dataset: {dataset}. Must be 'mnist' or 'cifar'")
     
     return VQVAE(
         encoder=encoder,

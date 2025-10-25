@@ -1,7 +1,13 @@
 import torch
 import torch.nn as nn
-from vq_vae_geodesic.models.modules.encoder import Encoder_MNIST_VAE
-from vq_vae_geodesic.models.modules.decoder import Decoder_MNIST_VAE
+from vq_vae_geodesic.models.modules.encoder import (
+    Encoder_MNIST_VAE, 
+    Encoder_CIFAR_VAE
+)
+from vq_vae_geodesic.models.modules.decoder import (
+    Decoder_MNIST_VAE,
+    Decoder_CIFAR_VAE
+)
 
 class VariationalAutoencoder(nn.Module):
     def __init__(self, encoder, decoder):
@@ -28,18 +34,33 @@ class VariationalAutoencoder(nn.Module):
             return mu
 
 
-def build_vae_from_config(arch_params):
-
-    encoder = Encoder_MNIST_VAE(
-        arch_params.in_channels,
-        arch_params.hidden_channels,
-        arch_params.latent_dim
-    )
-    decoder = Decoder_MNIST_VAE(
-        arch_params.in_channels,
-        arch_params.hidden_channels,
-        arch_params.latent_dim
-    )
+def build_vae_from_config(arch_params, dataset="mnist"):
+    if dataset == "mnist":
+        encoder = Encoder_MNIST_VAE(
+            arch_params.in_channels,
+            arch_params.hidden_channels,
+            arch_params.latent_dim
+        )
+        decoder = Decoder_MNIST_VAE(
+            arch_params.out_channels,
+            arch_params.hidden_channels,
+            arch_params.latent_dim
+        )
+    elif dataset == "cifar":
+        encoder = Encoder_CIFAR_VAE(
+            arch_params.in_channels,
+            arch_params.hidden_channels,
+            arch_params.latent_dim,
+            num_residual_layers=2
+        )
+        decoder = Decoder_CIFAR_VAE(
+            arch_params.out_channels,
+            arch_params.hidden_channels,
+            arch_params.latent_dim,
+            num_residual_layers=2
+        )
+    else:
+        raise ValueError(f"Unknown dataset: {dataset}. Must be 'mnist' or 'cifar'")
 
     return VariationalAutoencoder(encoder, decoder)
 

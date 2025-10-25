@@ -24,7 +24,7 @@ def launch_train_pixelcnn_vqvae(resume=False):
 
 
     # Use pre-extracted VQ-VAE assigned-like codes saved by extract_vqvae_codes_mnist
-    codes_dir = latents_dir()
+    codes_dir = latents_dir('mnist')
     assigned_codes_path = codes_dir / 'vqvae_assigned_codes.pt'
     if not assigned_codes_path.exists():
         raise FileNotFoundError(f"Expected {assigned_codes_path} (run extract_vqvae_codes_mnist first)")
@@ -54,7 +54,7 @@ def launch_train_pixelcnn_vqvae(resume=False):
     start_epoch = 1
     train_loss_history = []
     val_loss_history = []
-    checkpoint_path = checkpoint_dir() / "pixelcnn_vqvae_mnist.pt"
+    checkpoint_path = checkpoint_dir('mnist') / "pixelcnn_vqvae_mnist.pt"
 
     if resume and checkpoint_path.exists():
         print(f"Resuming training from {checkpoint_path}")
@@ -92,7 +92,7 @@ def launch_train_pixelcnn_vqvae(resume=False):
 
     wandb.finish()
 
-    print(f"\nFinal model saved in {checkpoint_dir()}")
+    print(f"\nFinal model saved in {checkpoint_dir('mnist')}")
     print(f"Final Training Loss: {train_loss_avg[-1]:.4f}")
     print(f"Final Validation Loss: {val_loss_avg[-1]:.4f}")
 

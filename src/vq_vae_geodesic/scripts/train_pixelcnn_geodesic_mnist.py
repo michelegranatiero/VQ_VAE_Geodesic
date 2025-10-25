@@ -18,7 +18,7 @@ def launch_train_pixelcnn(resume=False):
     print(f"Using device: {device}")
     
     # Load assigned codes (discrete codes indices per image)
-    codes_path = latents_dir() / "assigned_codes.pt"
+    codes_path = latents_dir('mnist') / "assigned_codes.pt"
     print(f"Loading assigned codes from {codes_path}")
 
     # Get data loaders (of codes indices)
@@ -47,7 +47,7 @@ def launch_train_pixelcnn(resume=False):
     start_epoch = 1
     train_loss_history = []
     val_loss_history = []
-    checkpoint_path = checkpoint_dir() / "pixelcnn_geodesic_mnist.pt"
+    checkpoint_path = checkpoint_dir('mnist') / "pixelcnn_geodesic_mnist.pt"
     
     if resume and checkpoint_path.exists():
         print(f"Resuming training from {checkpoint_path}")
@@ -85,7 +85,7 @@ def launch_train_pixelcnn(resume=False):
 
     wandb.finish()
 
-    print(f"\nFinal model saved in {checkpoint_dir()}")
+    print(f"\nFinal model saved in {checkpoint_dir('mnist')}")
     print(f"Final Training Loss: {train_loss_avg[-1]:.4f}")
     print(f"Final Validation Loss: {val_loss_avg[-1]:.4f}")
 

@@ -23,10 +23,11 @@ VAE + Geodesic Quantization + PixelCNN Prior on MNIST (training):
 
     uv run -m src.vq_vae_geodesic.scripts.sample_geodesic_pixelcnn_mnist
     uv run -m src.vq_vae_geodesic.scripts.compare_geodesic_sampling
+    uv run -m src.vq_vae_geodesic.scripts.compare_vae_vs_geodesic
     uv run -m src.vq_vae_geodesic.scripts.compare_geodesic_temperatures
 
 VQ-VAE + PixelCNN Prior on MNIST (training):
-    uv run -m src.vq_vae_geodesic.scripts.train_pixelcnn_vqvae_mnist
+    uv run -m src.vq_vae_geodesic.scripts.train_pixelcnn_vqvae_mnist 
 
     uv run -m src.vq_vae_geodesic.scripts.compare_vqvae_sampling
 

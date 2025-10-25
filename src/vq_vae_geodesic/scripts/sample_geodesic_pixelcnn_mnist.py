@@ -7,7 +7,7 @@ autoregressive prior, then decodes them to images using the VAE decoder.
 """
 import torch
 
-from vq_vae_geodesic.config import data_dir
+from vq_vae_geodesic.config import data_dir, samples_dir
 from vq_vae_geodesic.hyperparameters import get_mnist_config
 from vq_vae_geodesic.utils import set_seed
 from vq_vae_geodesic.evaluation.sample import sample_pixelcnn
@@ -62,7 +62,7 @@ def launch_sample_pixelcnn(n_samples=16, temperature=1.0):
     print(f"Generated images shape: {images.shape}")
     
     # Save images 
-    save_dir = data_dir() / "samples"
+    save_dir = samples_dir("mnist")
     save_dir.mkdir(exist_ok=True, parents=True)
     
     data_path = save_dir / f"geodesic_pixelcnn_samples_t{temperature:.1f}.pt"

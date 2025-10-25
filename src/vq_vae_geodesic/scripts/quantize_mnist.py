@@ -17,9 +17,9 @@ def launch_quantization():
     quant_params = config.quant_params
 
     # -------------- LATENTS LOADING --------------
-    train_latents_path = latents_dir() / "train_latents.pt"
-    val_latents_path = latents_dir() / "val_latents.pt"
-    test_latents_path = latents_dir() / "test_latents.pt"
+    train_latents_path = latents_dir('mnist') / "train_latents.pt"
+    val_latents_path = latents_dir('mnist') / "val_latents.pt"
+    test_latents_path = latents_dir('mnist') / "test_latents.pt"
 
     train_latents, train_logvars = load_latents_mnist(train_latents_path)
     print(f"Loaded train latents: mu={train_latents.shape}, logvar={train_logvars.shape}")
@@ -62,19 +62,19 @@ def launch_quantization():
 
     # -------------- SAVING CODEBOOK AND CODES --------------
     # Save codebook
-    save_path = latents_dir() / "chunk_codebook.pt"
+    save_path = latents_dir('mnist') / "chunk_codebook.pt"
     quantizer.save(save_path)
     print(f"\nCodebook saved to {save_path}")
 
     # Save all codes together for convenience
-    all_codes_path = latents_dir() / "assigned_codes.pt"
+    all_codes_path = latents_dir('mnist') / "assigned_codes.pt"
     torch.save({
         'train_codes': train_codes,
         'val_codes': val_codes,
         'test_codes': test_codes
     }, all_codes_path)
 
-    print(f"Codes saved to {latents_dir()}")
+    print(f"Codes saved to {latents_dir('mnist')}")
 
 
 if __name__ == "__main__":

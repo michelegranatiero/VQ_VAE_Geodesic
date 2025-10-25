@@ -43,7 +43,7 @@ def launch_train_vqvae(resume=False):
     train_recon_history = []
     val_loss_history = []
     val_recon_history = []
-    checkpoint_path = checkpoint_dir() / "vqvae_mnist.pt"
+    checkpoint_path = checkpoint_dir('mnist') / "vqvae_mnist.pt"
     
     if resume and checkpoint_path.exists():
         print(f"Resuming training from {checkpoint_path}")
@@ -85,7 +85,7 @@ def launch_train_vqvae(resume=False):
     
     wandb.finish()
     
-    print(f"\nModel and training state saved in {checkpoint_dir()}")
+    print(f"\nModel and training state saved in {checkpoint_dir('mnist')}")
 
 if __name__ == "__main__":
     launch_train_vqvae(resume=RESUME)

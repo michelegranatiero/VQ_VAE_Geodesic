@@ -80,7 +80,7 @@ def launch_evaluation():
     _, vqvae_recon = get_vqvae_reconstructions(vqvae, test_loader, device, n_show=n_show)
 
     # Save comparison plot
-    save_dir = recons_dir()
+    save_dir = recons_dir('mnist')
     save_dir.mkdir(exist_ok=True, parents=True)
     plot_path = save_dir / "reconstructions_comparison.png"
     plot_reconstructions_comparison(orig_imgs, vae_recon, geodesic_recon, vqvae_recon, 

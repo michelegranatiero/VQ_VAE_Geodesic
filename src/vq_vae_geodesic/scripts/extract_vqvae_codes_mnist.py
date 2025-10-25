@@ -24,7 +24,7 @@ def launch_extraction():
     val_codes = extract_vqvae_codes(vqvae, val_loader, device)
     test_codes = extract_vqvae_codes(vqvae, test_loader, device)
 
-    out_dir = latents_dir()
+    out_dir = latents_dir('mnist')
     # Save a single assigned-like file with train/val/test keys so CodesDataset can load it
     out_path = out_dir / 'vqvae_assigned_codes.pt'
     train_t = torch.from_numpy(train_codes).long()

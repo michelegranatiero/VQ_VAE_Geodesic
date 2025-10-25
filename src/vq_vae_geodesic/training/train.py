@@ -180,7 +180,7 @@ def fit_vae(
 def step_vqvae(model, loss_fn, xb, device, opt=None):
     image_batch = xb.to(device)
     target_batch = image_batch  # For autoencoders, target is the input itself
-    x_recon, vq_loss = model(image_batch)
+    x_recon, vq_loss, encoding_indices = model(image_batch)
     recon_loss = loss_fn(x_recon, target_batch)
     loss = recon_loss + vq_loss
 

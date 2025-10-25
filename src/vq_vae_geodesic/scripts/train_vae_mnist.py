@@ -44,7 +44,7 @@ def launch_train(resume=False):
     train_recon_history = []
     val_loss_history = []
     val_recon_history = []
-    checkpoint_path = checkpoint_dir() / "checkpoint_mnist.pt"
+    checkpoint_path = checkpoint_dir('mnist') / "checkpoint_mnist.pt"
 
     if resume and checkpoint_path.exists():
         print(f"Resuming training from {checkpoint_path}")
@@ -86,7 +86,7 @@ def launch_train(resume=False):
 
     wandb.finish()
 
-    print(f"\nModel and training state saved in {checkpoint_dir()}")
+    print(f"\nModel and training state saved in {checkpoint_dir('mnist')}")
     print("\nNext step: Extract latents")
     print("uv run -m src.vq_vae_geodesic.scripts.extract_mnist_latents")
 

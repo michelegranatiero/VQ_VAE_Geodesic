@@ -22,11 +22,17 @@ def vqvae_loss_bce(x_recon, target):
     recon_loss = recon_loss / batch_size  # Normalize to get average per image
     return recon_loss
 
-
-
 # VAE loss with MSE for reconstruction (useful for natural images like CIFAR-10)
 def vae_loss_mse(x_recon, target, mu, logvar, beta=1.0):
     recon_loss = F.mse_loss(x_recon, target, reduction='sum') / target.size(0)  # Normalize by batch size
     kldivergence = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()) / target.size(0)  # Normalize by batch size
     loss = recon_loss + beta * kldivergence
-    return loss
+    return loss, recon_loss
+
+def vqvae_loss_mse(x_recon, target, data_variance=None):
+    recon_loss = F.mse_loss(x_recon, target, reduction='sum') / target.size(0)
+    # Note: data_variance not used in training, only for monitoring
+    return recon_loss
+
+
+

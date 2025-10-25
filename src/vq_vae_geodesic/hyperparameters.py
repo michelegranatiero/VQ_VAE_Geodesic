@@ -87,7 +87,7 @@ class VQVAEParams:
     num_epochs: int = 50
     batch_size: int = 128
     lr: float = 1e-3
-    weight_decay: float = 1e-5
+    weight_decay: float = 0.0  
     
     # Grid shape for latent codes (must match encoder output)
     grid_h: int = 2
@@ -135,7 +135,7 @@ def get_mnist_config() -> ExperimentConfig:
     """Get configuration for MNIST experiments."""
     return ExperimentConfig(
         arch_params=VAEArchParams(in_channels=1, out_channels=1, hidden_channels=128, latent_dim=128), 
-        training_params=TrainingParams(num_epochs=50, batch_size=128, variational_beta=1.0),
+        training_params=TrainingParams(num_epochs=50, batch_size=128, variational_beta=0.1),
         quant_params=GeodesicQuantizationParams(n_chunks=16, n_codewords=512, grid_h=4, grid_w=4),   # latent_dim / n_chunks = chunk_size -> 128 / 16 = 8 -> grid 4x4=16  
         vqvae_params=VQVAEParams(num_embeddings=512, embedding_dim=64, commitment_cost=0.25),
         pixelcnn_params=PixelCNNParams(num_epochs=50, embed_dim=64, hidden_channels=128, n_layers=7),
@@ -143,13 +143,49 @@ def get_mnist_config() -> ExperimentConfig:
     )
 
 
-# def get_cifar_config() -> ExperimentConfig:
-#     """Get configuration for CIFAR-10 experiments."""
-#     return ExperimentConfig(
-#         arch_params=VAEArchParams(in_channels=3, out_channels=3, hidden_channels=128, latent_dim=32),
-#         training_params=TrainingParams(num_epochs=100, batch_size=128, variational_beta=1.0),
-#         quant_params=GeodesicQuantizationParams(n_chunks=8, n_codewords=256),
-#         pixelcnn_params=PixelCNNParams(embed_dim=64, hidden_channels=128, n_layers=7),
-#         vqvae_params=VQVAEParams(num_embeddings=256, embedding_dim=4, commitment_cost=0.25),
-#         data_params=DataParams(dataset="cifar", batch_size=128)
-#     )
+def get_cifar10_config() -> ExperimentConfig:
+    return ExperimentConfig(
+        arch_params=VAEArchParams(
+            in_channels=3, 
+            out_channels=3, 
+            hidden_channels=128, 
+            latent_dim=512
+        ),
+        training_params=TrainingParams(
+            num_epochs=50,
+            batch_size=100,
+            lr=3e-4, 
+            variational_beta=0.1
+        ),
+        quant_params=GeodesicQuantizationParams(
+            n_chunks=64,  # 8x8 grid
+            n_codewords=512,  # Codebook size (K)
+            knn_k=20,  # k-NN neighbors
+            grid_h=8,
+            grid_w=8
+        ),
+        vqvae_params=VQVAEParams(
+            num_embeddings=512,  # codebook size 
+            embedding_dim=64, 
+            commitment_cost=0.25,
+            num_epochs=50,
+            batch_size=256,  
+            lr=1e-3,
+            grid_h=8,
+            grid_w=8
+        ),
+        pixelcnn_params=PixelCNNParams(
+            embed_dim=64,  
+            hidden_channels=128,  
+            n_layers=12, 
+            num_epochs=50,  
+            batch_size=100,
+            lr=1e-3,  
+            temperature=1.0
+        ),
+        data_params=DataParams(
+            dataset="cifar",
+            batch_size=100,
+            num_workers=0
+        )
+    )

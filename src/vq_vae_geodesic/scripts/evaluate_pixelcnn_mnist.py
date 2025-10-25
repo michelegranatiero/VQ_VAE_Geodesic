@@ -18,7 +18,7 @@ def launch_evaluation():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # --- Geodesic PixelCNN: use assigned_codes.pt (has train/val/test splits)
-    codes_path = latents_dir() / "assigned_codes.pt"
+    codes_path = latents_dir('mnist') / "assigned_codes.pt"
     grid_shape = (config.quant_params.grid_h, config.quant_params.grid_w)
     _, _, test_loader_geo = get_codes_loaders(
         pt_path=codes_path,
@@ -28,7 +28,7 @@ def launch_evaluation():
     )
 
     # --- VQ-VAE PixelCNN: use the assigned-like file produced by extract_vqvae_codes_mnist
-    vqvae_assigned_path = latents_dir() / 'vqvae_assigned_codes.pt'
+    vqvae_assigned_path = latents_dir('mnist') / 'vqvae_assigned_codes.pt'
     if not vqvae_assigned_path.exists():
         raise FileNotFoundError(f"Expected {vqvae_assigned_path}; run extract_vqvae_codes_mnist first")
 

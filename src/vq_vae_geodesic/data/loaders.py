@@ -8,9 +8,15 @@ from torchvision import transforms
 from torchvision.datasets import MNIST, CIFAR10
 
 
-def get_cifar_loaders(batch_size=64, root='data/raw', num_workers=0, shuffle_train_set=True):
-    """Get CIFAR-10 data loaders (train, val, test)."""
-    transform = transforms.Compose([transforms.ToTensor()])
+def get_cifar_loaders(batch_size=100, num_workers=2, data_dir='data/raw', shuffle_train_set=True):
+    """
+    Returns train, val, test loaders for CIFAR-10 (32x32x3 RGB images).
+    Images are in [0, 1] range.
+    """
+    transform = transforms.Compose([
+        transforms.ToTensor()  # [0, 1]
+    ])
+    root = data_dir
     train_ds = CIFAR10(root=root, train=True, transform=transform, download=True)
     # split train into train and validation WITH FIXED SEED FOR REPRODUCIBILITY
     generator = torch.Generator().manual_seed(42)

@@ -7,9 +7,28 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 
 
+def prepare_image_for_display(img):
+    """
+    Prepare image for display with matplotlib.
+    Handles both PyTorch tensors and NumPy arrays.
+    Converts (C, H, W) to (H, W, C) for RGB or (H, W) for grayscale.
+    """
+    # Convert PyTorch tensor to NumPy if needed
+    if torch.is_tensor(img):
+        img = img.detach().cpu().numpy()
+    
+    if img.shape[0] == 3:  # RGB
+        return img.transpose(1, 2, 0)  # (C, H, W) -> (H, W, C)
+    elif img.shape[0] == 1:  # Grayscale
+        return img.squeeze(0)  # (1, H, W) -> (H, W)
+    else:
+        raise ValueError(f"Unexpected image shape: {img.shape}")
+
+
 def plot_samples_grid(samples, out_path, n_rows=4, n_cols=4, title="PixelCNN Samples"):
     """
     Plot a grid of generated samples.
+    Handles both grayscale (1, H, W) and RGB (3, H, W) images.
     
     Args:
         samples: Generated images (N, C, H, W) or (N, H, W)
@@ -23,8 +42,9 @@ def plot_samples_grid(samples, out_path, n_rows=4, n_cols=4, title="PixelCNN Sam
     
     for idx, ax in enumerate(axes.flat):
         if idx < n_samples:
-            img = samples[idx].squeeze()  # Remove channel dim if present
-            ax.imshow(img, cmap='gray', vmin=0, vmax=1)
+            img = samples[idx]  # (C, H, W)
+            img_display = prepare_image_for_display(img)
+            ax.imshow(img_display, cmap='gray' if samples[idx].shape[0] == 1 else None, vmin=0, vmax=1)
             ax.axis('off')
             ax.set_title(f"Sample {idx+1}", fontsize=8)
         else:
@@ -122,7 +142,8 @@ def plot_comparison_2rows(top_imgs, bottom_imgs, top_label, bottom_label,
     # Top row
     for i in range(n):
         ax = axes[0, i]
-        ax.imshow(top_imgs[i].squeeze(), cmap='gray', vmin=0, vmax=1)
+        img_display = prepare_image_for_display(top_imgs[i])
+        ax.imshow(img_display, cmap='gray' if top_imgs[i].shape[0] == 1 else None, vmin=0, vmax=1)
         ax.axis('off')
         if i == 0:
             ax.text(-0.1, 0.5, top_label, fontsize=11, fontweight='bold', 
@@ -131,7 +152,8 @@ def plot_comparison_2rows(top_imgs, bottom_imgs, top_label, bottom_label,
     # Bottom row
     for i in range(n):
         ax = axes[1, i]
-        ax.imshow(bottom_imgs[i].squeeze(), cmap='gray', vmin=0, vmax=1)
+        img_display = prepare_image_for_display(bottom_imgs[i])
+        ax.imshow(img_display, cmap='gray' if bottom_imgs[i].shape[0] == 1 else None, vmin=0, vmax=1)
         ax.axis('off')
         if i == 0:
             ax.text(-0.1, 0.5, bottom_label, fontsize=11, fontweight='bold', 
@@ -165,7 +187,8 @@ def plot_temperature_comparison(samples_by_temp, temperatures, save_path, n_show
     for i, (temp, samples) in enumerate(zip(temperatures, samples_by_temp)):
         for j in range(n):
             ax = axes[i, j]
-            ax.imshow(samples[j].squeeze(), cmap='gray', vmin=0, vmax=1)
+            img_display = prepare_image_for_display(samples[j])
+            ax.imshow(img_display, cmap='gray' if samples[j].shape[0] == 1 else None, vmin=0, vmax=1)
             ax.axis('off')
             
             # Label temperature on the left

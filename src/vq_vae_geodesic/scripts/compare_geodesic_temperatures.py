@@ -2,7 +2,7 @@
 Compare VAE+Geodesic PixelCNN sampling at different temperatures.
 """
 import torch
-from vq_vae_geodesic.config import data_dir
+from vq_vae_geodesic.config import data_dir, samples_dir
 from vq_vae_geodesic.hyperparameters import get_mnist_config
 from vq_vae_geodesic.utils import set_seed
 from vq_vae_geodesic.evaluation.sample import sample_pixelcnn
@@ -61,7 +61,7 @@ def compare_temperatures(temperatures=[0.5, 0.8, 1.0, 1.2, 1.5], n_samples_per_t
         all_samples.append(images)
     
     # Save comparison
-    save_dir = data_dir() / "samples"
+    save_dir = samples_dir("mnist")
     save_dir.mkdir(exist_ok=True, parents=True)
     
     # Save visualization

@@ -3,7 +3,7 @@ Compare VQ-VAE sampling methods: PixelCNN vs Random
 """
 import torch
 
-from vq_vae_geodesic.config import data_dir
+from vq_vae_geodesic.config import data_dir, samples_dir
 from vq_vae_geodesic.hyperparameters import get_mnist_config
 from vq_vae_geodesic.utils import set_seed
 from vq_vae_geodesic.evaluation.sample import sample_pixelcnn
@@ -78,7 +78,7 @@ def compare_vqvae_sampling_methods(n_samples=16, temperature=1.0):
     print(f"VQ-VAE Random images shape: {random_images.shape}")
     
     # Save comparison
-    save_dir = data_dir() / "samples"
+    save_dir = samples_dir("mnist")
     save_dir.mkdir(exist_ok=True, parents=True)
     
     # Save visualization

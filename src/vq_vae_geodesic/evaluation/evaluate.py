@@ -90,7 +90,7 @@ def evaluate_vqvae_mnist(model, data_loader, device):
     with torch.no_grad():
         for image_batch, _ in tqdm(data_loader, desc="Evaluating VQ-VAE"):
             image_batch = image_batch.to(device)
-            x_recon, vq_loss = model(image_batch)
+            x_recon, vq_loss, _ = model(image_batch)
             recon_loss = vqvae_loss_bce(x_recon, image_batch)
             loss = recon_loss + vq_loss
             batch_size = image_batch.size(0)

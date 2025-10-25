@@ -27,7 +27,7 @@ def launch_extraction():
     )
 
     # Extract and save latents
-    save_dir = latents_dir()
+    save_dir = latents_dir('mnist')
     save_dir.mkdir(exist_ok=True, parents=True)
 
     print("Extracting train latents...")

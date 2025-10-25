@@ -17,16 +17,25 @@ def batch_psnr(mse, data_range=1.0):
     return 10.0 * math.log10((data_range**2) / mse)
 
 def batch_ssim(recon, target):
-    # compute average SSIM over batch (grayscale MNIST)
+    # compute average SSIM over batch (works for both grayscale and RGB)
     recon_np = (recon.detach().cpu().numpy())
     target_np = (target.detach().cpu().numpy())
     B = recon_np.shape[0]
     ssim_vals = []
     for i in range(B):
-        im1 = np.squeeze(recon_np[i])
-        im2 = np.squeeze(target_np[i])
-        # skimage expects HxW, floats 0..1
-        s = ssim_sk(im1, im2, data_range=1.0)
+        im1 = recon_np[i]  # Shape: (C, H, W) for both MNIST and CIFAR
+        im2 = target_np[i]
+        
+        # Check if image is RGB (3 channels) or grayscale (1 channel)
+        if im1.shape[0] == 3:  # RGB image (CIFAR-10)
+            # For RGB, specify channel_axis=0 (channels first format)
+            s = ssim_sk(im1, im2, data_range=1.0, channel_axis=0)
+        else:  # Grayscale image (MNIST)
+            # Squeeze to HxW for grayscale
+            im1 = np.squeeze(im1)
+            im2 = np.squeeze(im2)
+            s = ssim_sk(im1, im2, data_range=1.0)
+        
         ssim_vals.append(s)
     return float(np.mean(ssim_vals))
 
