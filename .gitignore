@@ -9,5 +9,6 @@ wheels/
 # Virtual environments
 .venv
 .github
-data/
+data/raw/
+data/**/*.pt
 wandb/
