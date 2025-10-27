@@ -20,10 +20,10 @@ def checkpoint_dir(dataset: str = None) -> Path:
     """
     if dataset is None:
         checkpoint_path = DATA_DIR / "checkpoints"
-    elif dataset.lower() in ['mnist', 'cifar10']:
+    elif dataset.lower() in ['mnist', 'cifar10', 'celeba']:
         checkpoint_path = DATA_DIR / f"checkpoints_{dataset.lower()}"
     else:
-        raise ValueError(f"Unknown dataset: {dataset}. Use 'mnist' or 'cifar10'")
+        raise ValueError(f"Unknown dataset: {dataset}. Use 'mnist', 'cifar10', or 'celeba'")
     
     checkpoint_path.mkdir(parents=True, exist_ok=True)
     return checkpoint_path
@@ -35,10 +35,10 @@ def latents_dir(dataset: str = None) -> Path:
     """
     if dataset is None:
         latents_path = DATA_DIR / "latents"
-    elif dataset.lower() in ['mnist', 'cifar10']:
+    elif dataset.lower() in ['mnist', 'cifar10', 'celeba']:
         latents_path = DATA_DIR / f"latents_{dataset.lower()}"
     else:
-        raise ValueError(f"Unknown dataset: {dataset}. Use 'mnist' or 'cifar10'")
+        raise ValueError(f"Unknown dataset: {dataset}. Use 'mnist', 'cifar10', or 'celeba'")
     
     latents_path.mkdir(parents=True, exist_ok=True)
     return latents_path
@@ -50,10 +50,10 @@ def recons_dir(dataset: str = None) -> Path:
     """
     if dataset is None:
         recons_path = DATA_DIR / "recons"
-    elif dataset.lower() in ['mnist', 'cifar10']:
+    elif dataset.lower() in ['mnist', 'cifar10', 'celeba']:
         recons_path = DATA_DIR / f"recons_{dataset.lower()}"
     else:
-        raise ValueError(f"Unknown dataset: {dataset}. Use 'mnist' or 'cifar10'")
+        raise ValueError(f"Unknown dataset: {dataset}. Use 'mnist', 'cifar10', or 'celeba'")
     
     recons_path.mkdir(parents=True, exist_ok=True)
     return recons_path
@@ -65,10 +65,10 @@ def samples_dir(dataset: str = None) -> Path:
     """
     if dataset is None:
         samples_path = DATA_DIR / "samples"
-    elif dataset.lower() in ['mnist', 'cifar10']:
+    elif dataset.lower() in ['mnist', 'cifar10', 'celeba']:
         samples_path = DATA_DIR / f"samples_{dataset.lower()}"
     else:
-        raise ValueError(f"Unknown dataset: {dataset}. Use 'mnist' or 'cifar10'")
+        raise ValueError(f"Unknown dataset: {dataset}. Use 'mnist', 'cifar10', or 'celeba'")
     
     samples_path.mkdir(parents=True, exist_ok=True)
     return samples_path

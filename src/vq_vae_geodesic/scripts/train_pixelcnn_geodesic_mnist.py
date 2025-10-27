@@ -34,7 +34,7 @@ def launch_train_pixelcnn(resume=False):
     print(f"Val batches: {len(val_loader)}")
     
     # Build model
-    model = build_pixelcnn_from_config(config)
+    model = build_pixelcnn_from_config(config, for_vqvae=False)
     model = model.to(device)
     
     # Optimizer

@@ -5,8 +5,8 @@ from vq_vae_geodesic.hyperparameters import get_cifar10_config
 from vq_vae_geodesic.data.loaders import get_codes_loaders
 
 from vq_vae_geodesic.evaluation.evaluate import (
-    evaluate_pixelcnn_geodesic_mnist,
-    evaluate_pixelcnn_vqvae_mnist,
+    evaluate_pixelcnn_geodesic_cifar10,
+    evaluate_pixelcnn_vqvae_cifar10,
 )
 from vq_vae_geodesic.config import latents_dir
 from vq_vae_geodesic.evaluation.utils import load_pixelcnn_checkpoint
@@ -41,16 +41,16 @@ def launch_evaluation():
     )
 
     # Load PixelCNN models
-    pixelcnn_geodesic = load_pixelcnn_checkpoint("pixelcnn_geodesic_cifar10_best.pt", config, device)
-    pixelcnn_vqvae = load_pixelcnn_checkpoint("pixelcnn_vqvae_cifar10_best.pt", config, device)
+    pixelcnn_geodesic = load_pixelcnn_checkpoint("pixelcnn_geodesic_cifar10_best.pt", config, device, is_vqvae=False)
+    pixelcnn_vqvae = load_pixelcnn_checkpoint("pixelcnn_vqvae_cifar10_best.pt", config, device, is_vqvae=True)
 
     # Evaluate: geodesic uses test_loader_geo, vqvae uses test_loader_vqvae
-    metrics_geo = evaluate_pixelcnn_geodesic_mnist(pixelcnn_geodesic, test_loader_geo, device)
-    metrics_vq = evaluate_pixelcnn_vqvae_mnist(pixelcnn_vqvae, test_loader_vqvae, device)
+    metrics_geo = evaluate_pixelcnn_geodesic_cifar10(pixelcnn_geodesic, test_loader_geo, device)
+    metrics_vq = evaluate_pixelcnn_vqvae_cifar10(pixelcnn_vqvae, test_loader_vqvae, device)
 
     print("\n=== PixelCNN Test Metrics (CIFAR-10) ===")
-    print(f"Geodesic PixelCNN - Loss: {metrics_geo['loss']:.6f}, Perplexity: {metrics_geo['perplexity']:.4f}")
-    print(f"VQ-VAE PixelCNN  - Loss: {metrics_vq['loss']:.6f}, Perplexity: {metrics_vq['perplexity']:.4f}")
+    print(f"Geodesic PixelCNN - Loss: {metrics_geo['loss']:.6f}, Perplexity: {metrics_geo['perplexity']:.4f} ({metrics_geo['perplexity_pct']:.1f}%)")
+    print(f"VQ-VAE PixelCNN  - Loss: {metrics_vq['loss']:.6f}, Perplexity: {metrics_vq['perplexity']:.4f} ({metrics_vq['perplexity_pct']:.1f}%)")
 
 
 if __name__ == "__main__":

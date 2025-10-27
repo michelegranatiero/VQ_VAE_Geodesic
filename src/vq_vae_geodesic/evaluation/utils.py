@@ -12,7 +12,7 @@ def load_model_vae_mnist(arch_params, device):
 	"""
 	Load VAE model for MNIST from checkpoint.
 	"""
-	checkpoint_path = checkpoint_dir('mnist') / "main_checkpoint_mnist.pt"
+	checkpoint_path = checkpoint_dir('mnist') / "checkpoint_mnist_best.pt"
 	model = build_vae_from_config(arch_params)
 	checkpoint = torch.load(checkpoint_path, map_location=device)
 	model.load_state_dict(checkpoint['model_state_dict'])
@@ -116,13 +116,15 @@ def save_codes(codes, save_path):
 # ----------------------------------------
 # ------------ PixelCNN -------------------
 # ----------------------------------------
-def load_pixelcnn_checkpoint(checkpoint_name, config, device):
+def load_pixelcnn_checkpoint(checkpoint_name, config, device, is_vqvae=False):
+
 	# Determine dataset from config
 	dataset = 'cifar10' if 'cifar' in checkpoint_name.lower() else 'mnist'
 	path = checkpoint_dir(dataset) / checkpoint_name
 	if not path.exists():
 		raise FileNotFoundError(f"PixelCNN checkpoint not found: {path}")
-	model = build_pixelcnn_from_config(config)
+	model = build_pixelcnn_from_config(config, for_vqvae=is_vqvae)
+	
 	checkpoint = torch.load(path, map_location=device)
 	model.load_state_dict(checkpoint['model_state_dict'])
 	model = model.to(device)
@@ -250,6 +252,76 @@ def load_model_vqvae_cifar10(arch_params, vqvae_params, device):
 	"""
 	checkpoint_path = checkpoint_dir('cifar10') / "vqvae_cifar10_best.pt"
 	model = build_vqvae_from_config(arch_params, vqvae_params, dataset="cifar")
+	checkpoint = torch.load(checkpoint_path, map_location=device)
+	model.load_state_dict(checkpoint['model_state_dict'])
+	model = model.to(device)
+	model.eval()
+	return model
+
+
+# ----------------------------------------------
+# ------------ CelebA Functions ----------------
+# ----------------------------------------------
+
+def load_model_vae_celeba(arch_params, device):
+	"""
+	Load VAE model for CelebA from checkpoint.
+	Uses same RGB architecture as CIFAR-10 (32×32 only).
+	"""
+	checkpoint_path = checkpoint_dir('celeba') / "vae_celeba_best.pt"
+	model = build_vae_from_config(arch_params, dataset="celeba")
+	checkpoint = torch.load(checkpoint_path, map_location=device)
+	model.load_state_dict(checkpoint['model_state_dict'])
+	model = model.to(device)
+	model.eval()
+	return model
+
+def load_latents_celeba(latents_path, map_location='cpu'):
+	"""
+	Load mu and logvar tensors from a .pt file (e.g. train_latents_celeba.pt).
+	Returns: mu, logvar
+	"""
+	if not latents_path.exists():
+		raise FileNotFoundError(
+			f"Latents not found at {latents_path}\n"
+			"Run extraction first"
+		)
+	data = torch.load(latents_path, map_location=map_location)
+	return data['mu'], data['logvar']
+
+def load_codebook_celeba(device):
+	"""
+	Load codebook_chunks tensor for CelebA from file.
+	"""
+	codebook_path = latents_dir('celeba') / "chunk_codebook_celeba.pt"
+	if not codebook_path.exists():
+		raise FileNotFoundError(
+			f"Codebook not found at {codebook_path}\n"
+			"Run quantization first: python -m vq_vae_geodesic.scripts_celeba.quantize_celeba"
+		)
+	codebook_data = torch.load(codebook_path, map_location=device)
+	return codebook_data['codebook_chunks']
+
+def load_codes_indices_celeba():
+	"""
+	Load train, val, test codes (indices) for CelebA from file.
+	"""
+	codes_path = latents_dir('celeba') / "assigned_codes_celeba.pt"
+	if not codes_path.exists():
+		raise FileNotFoundError(
+			f"Codes not found at {codes_path}\n"
+			"Run quantization first: python -m vq_vae_geodesic.scripts_celeba.quantize_celeba"
+		)
+	codes_data = torch.load(codes_path, map_location="cpu")
+	return codes_data['train_codes'], codes_data['val_codes'], codes_data['test_codes']
+
+def load_model_vqvae_celeba(arch_params, vqvae_params, device):
+	"""
+	Load VQ-VAE model for CelebA from checkpoint.
+	Uses same RGB architecture as CIFAR-10.
+	"""
+	checkpoint_path = checkpoint_dir('celeba') / "vqvae_celeba_best.pt"
+	model = build_vqvae_from_config(arch_params, vqvae_params, dataset="cifar")  # RGB architecture
 	checkpoint = torch.load(checkpoint_path, map_location=device)
 	model.load_state_dict(checkpoint['model_state_dict'])
 	model = model.to(device)

@@ -32,7 +32,6 @@ def launch_train(resume=False):
     optimizer = torch.optim.Adam(
         params=model.parameters(),
         lr=config.training_params.lr,
-        weight_decay=config.training_params.weight_decay
     )
 
     # Loss function con beta fissato tramite functools.partial

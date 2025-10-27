@@ -1,11 +1,49 @@
 """
 Data loaders
 """
-import numpy as np
 import torch
 from torch.utils.data import Dataset, DataLoader, random_split
 from torchvision import transforms
-from torchvision.datasets import MNIST, CIFAR10
+from torchvision.datasets import MNIST, CIFAR10, CelebA
+
+
+def get_celeba_loaders(batch_size=128, num_workers=0, data_dir='data/raw', shuffle_train_set=True, img_size=32):
+    transform = transforms.Compose([
+        transforms.CenterCrop(140),  # Crop to centered face region
+        transforms.Resize(img_size),  # Resize to target size (32 or 64)
+        transforms.ToTensor()  # [0, 1] range
+    ])
+    
+    root = data_dir
+    
+    # CelebA has official train/val/test splits
+    train_ds = CelebA(root=root, split='train', transform=transform, download=True)
+    val_ds = CelebA(root=root, split='valid', transform=transform, download=True)
+    test_ds = CelebA(root=root, split='test', transform=transform, download=True)
+    
+    train_loader = DataLoader(
+        train_ds, 
+        batch_size=batch_size, 
+        shuffle=shuffle_train_set,
+        num_workers=num_workers, 
+        pin_memory=True
+    )
+    val_loader = DataLoader(
+        val_ds, 
+        batch_size=batch_size, 
+        shuffle=False,
+        num_workers=num_workers, 
+        pin_memory=True
+    )
+    test_loader = DataLoader(
+        test_ds, 
+        batch_size=batch_size * 2, 
+        shuffle=False,
+        num_workers=num_workers, 
+        pin_memory=True
+    )
+    
+    return train_loader, val_loader, test_loader
 
 
 def get_cifar_loaders(batch_size=100, num_workers=2, data_dir='data/raw', shuffle_train_set=True):

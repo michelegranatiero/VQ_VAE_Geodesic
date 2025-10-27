@@ -8,7 +8,7 @@ from vq_vae_geodesic.config import latents_dir
 from vq_vae_geodesic.hyperparameters import get_cifar10_config
 from vq_vae_geodesic.models.quantization.geodesic import GeodesicQuantizer
 from vq_vae_geodesic.utils import set_seed
-from vq_vae_geodesic.evaluation.utils import load_latents_cifar10
+from vq_vae_geodesic.evaluation.utils import load_latents_celeba
 
 def launch_quantization():
     """Perform geodesic quantization on extracted CIFAR-10 latents."""
@@ -21,13 +21,13 @@ def launch_quantization():
     val_latents_path = latents_dir('cifar10') / "val_latents_cifar10.pt"
     test_latents_path = latents_dir('cifar10') / "test_latents_cifar10.pt"
 
-    train_latents, train_logvars = load_latents_cifar10(train_latents_path)
+    train_latents, train_logvars = load_latents_celeba(train_latents_path)
     print(f"Loaded train latents: mu={train_latents.shape}, logvar={train_logvars.shape}")
 
-    val_latents, val_logvars = load_latents_cifar10(val_latents_path)
+    val_latents, val_logvars = load_latents_celeba(val_latents_path)
     print(f"Loaded val latents: mu={val_latents.shape}, logvar={val_logvars.shape}")
 
-    test_latents, test_logvars = load_latents_cifar10(test_latents_path)
+    test_latents, test_logvars = load_latents_celeba(test_latents_path)
     print(f"Loaded test latents: mu={test_latents.shape}, logvar={test_logvars.shape}")
 
     # -------------- QUANTIZATION --------------

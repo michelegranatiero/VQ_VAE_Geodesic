@@ -32,7 +32,7 @@ def launch_train_pixelcnn_vqvae(resume=False):
     grid_shape = (config.vqvae_params.grid_h, config.vqvae_params.grid_w)
     train_loader_codes, val_loader_codes, _ = get_codes_loaders(
         pt_path=assigned_codes_path,
-        batch_size=config.pixelcnn_params.batch_size,
+        batch_size=config.pixelcnn_vqvae_params.batch_size,
         num_workers=config.data_params.num_workers,
         grid_shape=grid_shape
     )
@@ -40,14 +40,14 @@ def launch_train_pixelcnn_vqvae(resume=False):
     print(f"Train batches: {len(train_loader_codes)}")
     print(f"Val batches: {len(val_loader_codes)}")
 
-    # Build PixelCNN model
-    model = build_pixelcnn_from_config(config)
+    # Build PixelCNN model for VQ-VAE (use vqvae-specific params)
+    model = build_pixelcnn_from_config(config, for_vqvae=True)
     model = model.to(device)
 
     # Optimizer
     optimizer = torch.optim.Adam(
         params=model.parameters(),
-        lr=config.pixelcnn_params.lr
+        lr=config.pixelcnn_vqvae_params.lr
     )
 
     # Resume logic
@@ -81,7 +81,7 @@ def launch_train_pixelcnn_vqvae(resume=False):
         train_loader=train_loader_codes,
         val_loader=val_loader_codes,
         optimizer=optimizer,
-        num_epochs=config.pixelcnn_params.num_epochs,
+        num_epochs=config.pixelcnn_vqvae_params.num_epochs,
         device=device,
         start_epoch=start_epoch,
         checkpoint_path=checkpoint_path,

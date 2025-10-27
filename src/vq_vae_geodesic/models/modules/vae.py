@@ -46,7 +46,7 @@ def build_vae_from_config(arch_params, dataset="mnist"):
             arch_params.hidden_channels,
             arch_params.latent_dim
         )
-    elif dataset == "cifar":
+    elif dataset in ["cifar", "celeba"]:
         encoder = Encoder_CIFAR_VAE(
             arch_params.in_channels,
             arch_params.hidden_channels,
@@ -60,7 +60,7 @@ def build_vae_from_config(arch_params, dataset="mnist"):
             num_residual_layers=2
         )
     else:
-        raise ValueError(f"Unknown dataset: {dataset}. Must be 'mnist' or 'cifar'")
+        raise ValueError(f"Unknown dataset: {dataset}. Must be 'mnist', 'cifar', or 'celeba'")
 
     return VariationalAutoencoder(encoder, decoder)
 

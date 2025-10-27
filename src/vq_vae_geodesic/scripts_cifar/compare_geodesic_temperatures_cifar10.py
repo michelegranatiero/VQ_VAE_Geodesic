@@ -14,7 +14,7 @@ from vq_vae_geodesic.evaluation.utils import (
 )
 from vq_vae_geodesic.evaluation.visualize import plot_temperature_comparison
 
-TEMPERATURES = [0.5, 0.8, 1.0, 1.2, 1.5]
+TEMPERATURES = [0.5, 1.0, 1.5, 2.0, 5.0]
 N_SAMPLES_PER_TEMP = 16
 
 

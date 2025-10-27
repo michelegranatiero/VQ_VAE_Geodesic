@@ -5,7 +5,6 @@ Implements a PixelCNN with masked convolutions. After training on quantized
 latent codes from a VAE/VQ-VAE, it can generate new valid latents codes (indices)
 through ancestral sampling.
 
-Reference: van den Oord et al., "Pixel Recurrent Neural Networks", 2016
 """
 from typing import Literal
 import torch
@@ -26,40 +25,34 @@ class MaskedConv2d(nn.Conv2d):
     """
     def __init__(self, in_channels, out_channels, kernel_size, mask_type: Literal["A", "B"] = "B", stride=1, padding=0, bias=True):
         super().__init__(in_channels, out_channels, kernel_size, stride=stride, padding=padding, bias=bias)
-        self.register_buffer('mask', self.weight.data.clone())
+        if mask_type not in ("A", "B"):
+            raise ValueError("mask_type must be 'A' or 'B'")
+        
         kh, kw = kernel_size if isinstance(kernel_size, tuple) else (kernel_size, kernel_size)
-        self.mask.fill_(1)
-        # center position
         yc, xc = kh // 2, kw // 2
-        # mask out future pixels
-        self.mask[:, :, yc+1:, :] = 0
-        self.mask[:, :, yc, xc + (1 if mask_type == 'A' else 0):] = 0
-        # Note: the center pixel of mask_type 'A' is zeroed (can't see itself), 'B' can see itself.
+        
+        # Create mask of ones and zero-out "future" pixels
+        mask = torch.ones_like(self.weight.data)
+        # Zero rows below center
+        mask[:, :, yc+1:, :] = 0
+        # Zero center and right for mask type A, but only right-of-center for B
+        if mask_type == 'A':
+            mask[:, :, yc, xc:] = 0   # Center excluded -> can't see itself
+        else:
+            mask[:, :, yc, xc+1:] = 0  # Center allowed -> can see itself
+        
+        # Register as buffer so it's moved with .to(device)
+        self.register_buffer('mask', mask)
 
     def forward(self, x):
-        self.weight.data *= self.mask
-        return super().forward(x)
+        # Do not overwrite self.weight.data in place
+        masked_weight = self.weight * self.mask
+        return F.conv2d(x, masked_weight, self.bias, self.stride, self.padding, self.dilation, self.groups)
 
 
 class PixelCNN(nn.Module):
     """
     PixelCNN for autoregressive prior over discrete latent codes.
-    
-    Models p(z) = ∏_i p(z_i | z_<i) where z is a grid of discrete codes.
-    Used to learn the true prior distribution after VAE quantization.
-    
-    Architecture:
-    - Token embedding layer
-    - Masked conv type A (first layer)
-    - Stack of masked conv type B layers
-    - Output projection to logits over vocabulary
-    
-    Args:
-        num_tokens: Vocabulary size (number of codewords K)
-        embed_dim: Dimension of token embeddings
-        hidden_channels: Number of channels in hidden layers
-        n_layers: Number of masked conv layers after first
-        kernel_size: Size of conv kernels (must be odd)
     """
     
     def __init__(self, num_tokens, embed_dim=64, hidden_channels=128, n_layers=7, kernel_size=7):
@@ -123,20 +116,27 @@ class PixelCNN(nn.Module):
         return logits
 
 
-def build_pixelcnn_from_config(config):
+def build_pixelcnn_from_config(config, for_vqvae=False):
     """
     Build PixelCNN model from experiment configuration.
     
     Args:
         config: ExperimentConfig with pixelcnn_params
+        for_vqvae: If True, build for VQ-VAE (uses vqvae_params and pixelcnn_vqvae_params).
+                   If False, build for Geodesic (uses quant_params and pixelcnn_params).
         
     Returns:
         PixelCNN model
     """
-    params = config.pixelcnn_params
+    if for_vqvae:
+        params = config.pixelcnn_vqvae_params
+        num_tokens = config.vqvae_params.num_embeddings
+    else:
+        params = config.pixelcnn_params
+        num_tokens = config.quant_params.n_codewords
     
     return PixelCNN(
-        num_tokens=config.quant_params.n_codewords,
+        num_tokens=num_tokens,
         embed_dim=params.embed_dim,
         hidden_channels=params.hidden_channels,
         n_layers=params.n_layers,

@@ -8,6 +8,7 @@ authors = [
 ]
 requires-python = ">=3.12"
 dependencies = [
+    "gdown>=5.2.0",
     "ipykernel>=6.30.1",
     "ipywidgets>=8.1.7",
     "kmedoids>=0.5.3.1",

@@ -410,6 +410,10 @@ def fit_pixelcnn(
         train_loss = train_loss_averager(None)
         train_loss_avg_history.append(train_loss)
         train_perplexity = float(torch.exp(torch.tensor(train_loss)))
+        
+        # Codebook size from model (num_tokens in PixelCNN = num_embeddings)
+        num_embeddings = model.num_tokens
+        train_perplexity_pct = (train_perplexity / num_embeddings) * 100
 
         # --- VALIDATION ---
         model.eval()
@@ -428,11 +432,12 @@ def fit_pixelcnn(
         val_loss = val_loss_averager(None)
         val_loss_avg_history.append(val_loss)
         val_perplexity = float(torch.exp(torch.tensor(val_loss)))
+        val_perplexity_pct = (val_perplexity / num_embeddings) * 100
 
         print(
             f"Epoch: {epoch}\n"
-            f"Train set: Average loss: {train_loss:.4f} | Perplexity: {train_perplexity:.2f}\n"
-            f"Validation set: Average loss: {val_loss:.4f} | Perplexity: {val_perplexity:.2f}\n"
+            f"Train set: Average loss: {train_loss:.4f} | Perplexity: {train_perplexity:.2f} ({train_perplexity_pct:.1f}%)\n"
+            f"Validation set: Average loss: {val_loss:.4f} | Perplexity: {val_perplexity:.2f} ({val_perplexity_pct:.1f}%)\n"
         )
 
         # Logging wandb            
@@ -440,8 +445,10 @@ def fit_pixelcnn(
             "epoch": epoch,
             "train/loss": train_loss,
             "train/perplexity": train_perplexity,
+            "train/perplexity_pct": train_perplexity_pct,
             "val/loss": val_loss,
             "val/perplexity": val_perplexity,
+            "val/perplexity_pct": val_perplexity_pct,
         }, step=epoch)
 
         # Prepare checkpoint dict for best model

@@ -10,14 +10,13 @@ from vq_vae_geodesic.data.loaders import get_cifar_loaders
 
 
 class LitVAE(L.LightningModule):
-    def __init__(self, encoder, decoder, loss_fn, variational_beta=1.0, lr=1e-3, weight_decay=1e-5):
+    def __init__(self, encoder, decoder, loss_fn, variational_beta=1.0, lr=1e-3):
         super().__init__()
         self.encoder = encoder
         self.decoder = decoder
         self.loss_fn = loss_fn
         self.variational_beta = variational_beta
         self.lr = lr
-        self.weight_decay = weight_decay
 
         # self.save_hyperparameters()
 
@@ -43,7 +42,7 @@ class LitVAE(L.LightningModule):
         return loss
 
     def configure_optimizers(self):
-        return torch.optim.Adam(params=self.parameters(), lr=self.lr, weight_decay=self.weight_decay)
+        return torch.optim.Adam(params=self.parameters(), lr=self.lr)
 
     def _common_step(self, batch, batch_idx):
         x, y = batch

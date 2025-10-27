@@ -19,9 +19,9 @@ class GeodesicQuantizer:
     Pipeline:
     1. Split latent vectors into chunks
     2. Build k-NN graph on subsampled chunks
-    3. Compute geodesic distances via shortest paths (requires numpy)
-    4. Cluster with K-medoids (requires numpy)
-    5. Use medoids as final codewords (stored as torch.Tensor)
+    3. Compute geodesic distances via shortest paths
+    4. Cluster with K-medoids
+    5. Use medoids as final codewords
     """
 
     def __init__(self, n_codewords=256, n_chunks=None, chunk_size=None, k=20, random_state=42):
@@ -99,8 +99,8 @@ class GeodesicQuantizer:
         # Convert logvars to stddevs (sigmas)
         sigmas = torch.sqrt(torch.exp(logvars_pts))
 
-        # Step 2: Subsample for efficiency (max 10000 points)
-        self.idx_sub = subsample_indices(points.shape[0], max_pts=10000, seed=self.random_state)
+        # Step 2: Subsample for efficiency (max 20000 points)
+        self.idx_sub = subsample_indices(points.shape[0], max_pts=16000, seed=self.random_state)
         points_sub = points[self.idx_sub]
         sigmas_sub = sigmas[self.idx_sub]
 

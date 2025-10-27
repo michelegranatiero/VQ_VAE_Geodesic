@@ -31,7 +31,6 @@ def launch_train_vqvae(resume=False):
     optimizer = torch.optim.Adam(
         params=model.parameters(),
         lr=config.vqvae_params.lr,
-        weight_decay=config.vqvae_params.weight_decay
     )
 
     # Loss function

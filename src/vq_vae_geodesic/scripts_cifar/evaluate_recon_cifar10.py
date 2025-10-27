@@ -10,9 +10,9 @@ from vq_vae_geodesic.evaluation.utils import (
     load_model_vqvae_cifar10
 )
 from vq_vae_geodesic.evaluation.evaluate import (
-    evaluate_vae_mnist,
-    evaluate_vae_geodesic_mnist,
-    evaluate_vqvae_mnist
+    evaluate_vae_celeba,
+    evaluate_vae_geodesic_celeba,
+    evaluate_vqvae_celeba
 )
 from vq_vae_geodesic.evaluation.reconstructions import (
     get_vae_reconstructions,
@@ -44,19 +44,19 @@ def launch_evaluation():
 
     # VAE run
     # wandb.init(project="vq_vae_geodesic", name="vae_evaluation_cifar10", config=config, reinit=True)
-    metrics_vae = evaluate_vae_mnist(vae, test_loader, device)
+    metrics_vae = evaluate_vae_celeba(vae, test_loader, device)
     # wandb.log(add_prefix_to_dict(metrics_vae, "test/"))
     # wandb.finish()
 
     # VAE + Geodesic run
     # wandb.init(project="vq_vae_geodesic", name="geodesic_evaluation_cifar10", config=config, reinit=True)
-    metrics_geodesic = evaluate_vae_geodesic_mnist(vae, test_loader, codebook_chunks, test_codes, device)
+    metrics_geodesic = evaluate_vae_geodesic_celeba(vae, test_loader, codebook_chunks, test_codes, device)
     # wandb.log(add_prefix_to_dict(metrics_geodesic, "test/"))
     # wandb.finish()
 
     # VQ-VAE run
     # wandb.init(project="vq_vae_geodesic", name="vqvae_evaluation_cifar10", config=config, reinit=True)
-    metrics_vqvae = evaluate_vqvae_mnist(vqvae, test_loader, device)
+    metrics_vqvae = evaluate_vqvae_celeba(vqvae, test_loader, device)
     # wandb.log(add_prefix_to_dict(metrics_vqvae, "test/"))
     # wandb.finish()
 

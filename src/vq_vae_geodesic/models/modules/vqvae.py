@@ -98,9 +98,6 @@ class VectorQuantizer(nn.Module):
 class VQVAE(nn.Module):
     """
     VQ-VAE model with end-to-end learned codebook.
-    
-    Architecture:
-        Input → Encoder → VQ Layer → Decoder → Reconstruction
         
     Loss:
         Total = Reconstruction + VQ Loss (codebook + commitment)
@@ -143,7 +140,7 @@ def build_vqvae_from_config(arch_params, vqvae_params, dataset="mnist"):
     Args:
         arch_params: VAEArchParams with encoder/decoder config
         vqvae_params: VQVAEParams with VQ-specific config
-        dataset: "mnist" or "cifar" to select appropriate architecture
+        dataset: "mnist", "cifar", or "celeba"
         
     Returns:
         VQVAE model
@@ -160,7 +157,7 @@ def build_vqvae_from_config(arch_params, vqvae_params, dataset="mnist"):
             arch_params.hidden_channels,
             vqvae_params.embedding_dim
         )
-    elif dataset == "cifar":
+    elif dataset in ["cifar", "celeba"]:
         encoder = Encoder_CIFAR_VQVAE(
             arch_params.in_channels,
             arch_params.hidden_channels,
@@ -174,7 +171,7 @@ def build_vqvae_from_config(arch_params, vqvae_params, dataset="mnist"):
             num_residual_layers=2
         )
     else:
-        raise ValueError(f"Unknown dataset: {dataset}. Must be 'mnist' or 'cifar'")
+        raise ValueError(f"Unknown dataset: {dataset}. Must be 'mnist', 'cifar', or 'celeba'")
     
     return VQVAE(
         encoder=encoder,
